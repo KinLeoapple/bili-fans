@@ -1,9 +1,17 @@
 <script setup>
 import SideBar from "@/components/SideBar.vue";
+import MainWindow from "@/components/MainWindow.vue";
+import StatusBar from "@/components/StatusBar.vue";
+import MenuBar from "@/components/MenuBar.vue";
 </script>
 
 <template>
-  <side-bar/>
+  <menu-bar/>
+  <div class="frame">
+    <side-bar/>
+    <main-window/>
+  </div>
+  <status-bar/>
 </template>
 
 <script>
@@ -23,13 +31,32 @@ html, body, #app {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  justify-items: center;
+  align-content: center;
+  align-items: center;
   padding: 0;
   margin: 0;
-
+  background: transparent;
 }
 
 #app {
+  width: 800px;
+  height: 600px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.7);
+}
+
+.frame {
+  width: 100%;
+  height: calc(100% - 30px);
   display: inline-flex;
   flex-direction: row;
+  justify-content: center;
+  justify-items: center;
+  align-content: center;
+  align-items: center;
 }
 </style>

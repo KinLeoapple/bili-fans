@@ -30,12 +30,12 @@
 
 <script>
 import axios from "axios";
-
-const ipcRenderer = window.require('electron').ipcRenderer;
 import $ from "jquery";
 import {sleep} from "@/assets/sleep";
+import {quickSort} from "@/assets/quicksort";
 
-// eslint-disable-next-line no-unused-vars
+const ipcRenderer = window.require('electron').ipcRenderer;
+
 let PORT
 let isDisable = true
 
@@ -55,10 +55,11 @@ export default {
     updateList() {
       isDisable = true
       let list = ipcRenderer.sendSync('up-list')
-      list = list.sort()
+      list = quickSort(list)
       console.log(list.length)
       list.forEach(id => {
         sleep(200).then(() => {
+          this.appendToList(id)
           this.getInfo(id)
         })
       })
@@ -97,32 +98,43 @@ export default {
     getInfo(id) {
       return axios({
         method: 'post',
-        baseURL: 'http://localhost:' + 5000 + '/info/',
+        baseURL: 'http://localhost:' + PORT + '/info/',
         data: {
           uid: id
         }
-      }).then(resolve => {
-        if (resolve !== null && resolve !== undefined && resolve !== '') {
-          let data = resolve.data
-          console.log(data)
-          this.appendToList(id, data)
-        }
-      }).catch(err => {
-        console.log(err)
       })
     },
     // append up to list
-    appendToList(id, data) {
-      let avatar = `//wsrv.nl/?url=${data.face}&w=300&h=300&fit=cover&mask=circle`
+    appendToList(id) {
+
       let html =
           `<li class="up" uid="${id}">
-                <img class="avatar" src="${avatar}" alt="" crossOrigin="anonymous"/>
-                <span class="name" title="${data.name}">${data.name}</span>
+                <img class="avatar" src="${require('@/assets/avatar.png')}" alt="" crossOrigin="anonymous"/>
+                <span class="name" title=""></span>
                 <svg xmlns="http://www.w3.org/2000/svg" class="delete-up" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                 </svg>
                 </li>`
       $('.list').append(html)
+
+      this.getInfo(id)
+          .then(resolve => {
+            let data = resolve.data
+
+            let avatar = `//wsrv.nl/?url=${data.face}&w=300&h=300&fit=cover&mask=circle`
+            $(`[uid=${id}] .avatar`).attr('src', avatar)
+            let el = $(`[uid=${id}] .name`)
+            let name = data.name
+            el.attr('title', name)
+            el.html(name)
+          }).catch(err => {
+        console.log(err)
+      })
+
+      $(`[uid=${id}]`).on('click', () => {
+        ipcRenderer.sendSync('switch', id)
+      })
+
       $(`[uid=${id}] .delete-up`).on('click', () => {
         let isDelete = ipcRenderer.sendSync('delete', id)
         if (isDelete) {
@@ -156,7 +168,7 @@ export default {
           console.log(result)
           if (result.res === true) {
             msg.html('Added')
-            this.getInfo(val)
+            this.appendToList(val)
           } else {
             msg.html(result.msg)
           }
@@ -200,6 +212,7 @@ export default {
   font-size: 20px;
   font-weight: bold;
   letter-spacing: 1px;
+  -webkit-user-select: none;
 }
 
 .title .title-text {
@@ -279,6 +292,7 @@ export default {
 .line {
   height: 1px;
   width: 80%;
+  border-radius: 10px;
   background: #2c3e50;
   margin-bottom: 20px;
 }
@@ -392,6 +406,7 @@ export default {
 }
 
 .name {
+  min-width: 80px;
   max-width: 80px;
   height: 20px;
   overflow: hidden;
