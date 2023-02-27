@@ -1,5 +1,5 @@
-import asyncio
-import os
+export function Py_app() {
+    return `import asyncio
 import sys
 
 import nest_asyncio
@@ -40,6 +40,10 @@ class BUser:
         info = await self.buser.get_user_info()
         return info["face"]
 
+    # 获取直播间信息
+    def get_live_info(self):
+        return self.buser.get_live_info()
+
     # 获取所有动态
     async def get_dynamics(self):
         offset = 0
@@ -59,6 +63,14 @@ class BUser:
         return dynamics
 
 
+# 运行异步任务
+def run_task(fn):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    task = loop.create_task(fn)
+    loop.run_until_complete(task)
+
+
 # 强制退出程序
 @app.route('/stop/', methods=['POST'])
 def stop():
@@ -71,7 +83,7 @@ def stop():
 
 # 获取用户信息
 @app.route('/info/', methods=['POST'])
-def avatar():
+def user_info():
     request_json = request.get_json()
     uid = request_json['uid']
 
@@ -80,13 +92,44 @@ def avatar():
     async def fn():
         info.append(await BUser(uid).get_user_info())
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    task = loop.create_task(fn())
-    loop.run_until_complete(task)
+    run_task(fn())
+    response = make_response(info[0])
+    return response
+
+
+# 获取用户相关信息
+@app.route('/relation-info/', methods=['POST'])
+def relation_info():
+    request_json = request.get_json()
+    uid = request_json['uid']
+
+    info = []
+
+    async def fn():
+        info.append(await BUser(uid).get_relation_info())
+
+    run_task(fn())
+    response = make_response(info[0])
+    return response
+
+
+# 获取直播间信息
+@app.route('/live-info/', methods=['POST'])
+def live_info():
+    request_json = request.get_json()
+    uid = request_json['uid']
+
+    info = []
+
+    async def fn():
+        info.append(await BUser(uid).get_live_info())
+
+    run_task(fn())
     response = make_response(info[0])
     return response
 
 
 if __name__ == '__main__':
     app.run()
+`
+}

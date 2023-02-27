@@ -31,8 +31,8 @@
 <script>
 import axios from "axios";
 import $ from "jquery";
-import {sleep} from "@/assets/sleep";
-import {quickSort} from "@/assets/quicksort";
+import {sleep} from "@/assets/js/sleep";
+import {quickSort} from "@/assets/js/quicksort";
 
 const ipcRenderer = window.require('electron').ipcRenderer;
 
@@ -41,26 +41,30 @@ let isDisable = true
 
 export default {
   name: "SideBar",
-  mounted() {
-    this.$nextTick(() => {
-      PORT = ipcRenderer.sendSync('port')
-
-      this.updateList()
-      this.refreshList()
-      this.appendUID()
-    })
-  },
   methods: {
+    run() {
+      this.$nextTick(() => {
+        PORT = ipcRenderer.sendSync('port')
+
+        this.updateList()
+        this.refreshList()
+        this.appendUID()
+      })
+    },
     // update up list
-    updateList() {
+    updateList(clickedUID) {
       isDisable = true
       let list = ipcRenderer.sendSync('up-list')
       list = quickSort(list)
       console.log(list.length)
       list.forEach(id => {
         sleep(200).then(() => {
+
           this.appendToList(id)
           this.getInfo(id)
+          if (clickedUID !== undefined && clickedUID.toString() === id.toString()) {
+            $(`[uid=${id}]`).addClass('up-active')
+          }
         })
       })
       isDisable = false
@@ -73,13 +77,17 @@ export default {
           btn.css('transform', 'rotate(-360deg)')
           btn.css('transition', 'all 0s linear')
           isDisable = true
-          $('.list')[0].childNodes.forEach(el => {
+          let clickedUID = ''
+          $('.list').children().each((index, el) => {
+            if ($(el).hasClass('up-active')) {
+              clickedUID = $(el).attr('uid')
+            }
             $(el).css('opacity', 0)
             setTimeout(() => {
               $(el).remove()
             }, 250)
           })
-          this.updateList()
+          this.updateList(clickedUID)
           btn.off('click')
           $('.refresh-list-btn-box').css('cursor', 'not-allowed')
           setTimeout(() => {
@@ -106,10 +114,9 @@ export default {
     },
     // append up to list
     appendToList(id) {
-
       let html =
           `<li class="up" uid="${id}">
-                <img class="avatar" src="${require('@/assets/avatar.png')}" alt="" crossOrigin="anonymous"/>
+                <img class="avatar" src="${require('@/assets/img/avatar.png')}" alt="" crossOrigin="anonymous"/>
                 <span class="name" title=""></span>
                 <svg xmlns="http://www.w3.org/2000/svg" class="delete-up" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
@@ -132,7 +139,12 @@ export default {
       })
 
       $(`[uid=${id}]`).on('click', () => {
-        ipcRenderer.sendSync('switch', id)
+        let up = $(`[uid=${id}]`)
+        ipcRenderer.sendSync('switch', id, $(up)[0].querySelector('img').src)
+        up.siblings().each((index, el) => {
+          $(el).removeClass('up-active')
+        })
+        up.addClass('up-active')
       })
 
       $(`[uid=${id}] .delete-up`).on('click', () => {
@@ -216,7 +228,6 @@ export default {
 }
 
 .title .title-text {
-  width: auto;
   height: 30px;
   line-height: 30px;
   text-align: left;
@@ -294,6 +305,7 @@ export default {
   width: 80%;
   border-radius: 10px;
   background: #2c3e50;
+  margin-top: 10px;
   margin-bottom: 20px;
 }
 
@@ -324,13 +336,16 @@ export default {
 }
 
 .list-scroll {
-  height: calc(100% - 80px - 50px - 10px - 10px);
+  min-height: calc(100% - 80px - 50px - 10px - 10px - 20px - 1px);
+  height: calc(100% - 80px - 50px - 10px - 10px - 20px - 1px);
+  max-height: calc(100% - 80px - 50px - 10px - 10px - 20px - 1px);
   width: 100%;
   overflow: hidden;
   margin-bottom: 10px;
 }
 
 .list {
+  min-height: 200px;
   height: auto;
   width: 100%;
   position: relative;
@@ -367,7 +382,7 @@ export default {
   overflow: hidden;
 }
 
-.up:hover {
+.up:hover, .up-active {
   color: white;
   background: #2c3e50;
 }

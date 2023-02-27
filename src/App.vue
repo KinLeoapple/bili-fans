@@ -8,21 +8,37 @@ import MenuBar from "@/components/MenuBar.vue";
 <template>
   <menu-bar/>
   <div class="frame">
-    <side-bar/>
-    <main-window/>
+    <side-bar ref="side-bar"/>
+    <main-window ref="main-window"/>
   </div>
   <status-bar/>
 </template>
 
 <script>
-
+const ipcRenderer = window.require('electron').ipcRenderer;
 
 export default {
   name: 'App',
+  mounted() {
+    let runLoop = setInterval(() => {
+      let isRun = ipcRenderer.sendSync('window-run')
+      if (isRun) {
+        clearInterval(runLoop)
+
+        this.$refs["side-bar"].run()
+        this.$refs["main-window"].run()
+      }
+    }, 200)
+  }
 }
 </script>
 
 <style>
+@font-face {
+  font-family: LCD;
+  src: url("@/assets/font/Technology-BoldItalic.ttf");
+}
+
 html, body, #app {
   width: 100%;
   height: 100%;
@@ -51,7 +67,7 @@ html, body, #app {
 
 .frame {
   width: 100%;
-  height: calc(100% - 30px);
+  height: calc(100% - 61px);
   display: inline-flex;
   flex-direction: row;
   justify-content: center;

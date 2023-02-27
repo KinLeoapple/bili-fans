@@ -84,8 +84,8 @@ export class Server {
         })
 
         // send uid to main window
-        ipcMain.on('switch', (event, uid) => {
-            event.sender.send('switch-signal', uid)
+        ipcMain.on('switch', (event, uid, avatar) => {
+            event.sender.send('switch-signal', uid, avatar)
             event.returnValue = ''
         })
     }

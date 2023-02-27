@@ -15,5 +15,6 @@ export default {
   background: #2c3e50;
   color: white;
   border-radius: 0 0 10px 10px;
+  z-index: 999;
 }
 </style>
