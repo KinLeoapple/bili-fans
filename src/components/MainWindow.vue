@@ -21,12 +21,20 @@
         </svg>
       </div>
     </div>
-    <div class="line"></div>
+<!--    <div class="line"></div>-->
     <div class="chart-box">
       <!-- 实现录播、查看粉丝数等功能 -->
-      <div class="top-bar">
-        <div class="follower-btn"></div>
-        <div class="live-btn"></div>
+      <div class="chart-top-bar">
+        <span class="follower-btn"><em>Fans</em></span>
+        <span class="live-btn"><em>Live</em></span>
+      </div>
+      <div class="line"></div>
+      <div class="fans-chart">
+        <div class="fans-card">
+          <div class="fans-card-date"></div>
+          <div class="fans-card-number loading"></div>
+          <div class="fans-card-compare loading"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -230,16 +238,32 @@ export default {
   transition: all .2s linear;
 }
 
-.line {
-  width: 80%;
-  height: 1px;
-  border-radius: 10px;
-  background: #2c3e50;
-  margin-top: 10px;
+/*.line {*/
+/*  width: 80%;*/
+/*  height: 1px;*/
+/*  border-radius: 10px;*/
+/*  background: #2c3e50;*/
+/*  margin-top: 10px;*/
+/*  margin-bottom: 10px;*/
+/*}*/
+
+.chart-box {
+  min-width: 98%;
+  width: 98%;
+  max-width: 98%;
+  min-height: calc(100% - 10px - 50px - 5px - 1px);
+  max-height: calc(100% - 10px - 50px - 5px - 1px);
+  border-radius: 6px;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  border: #2c3e50 1px solid;
 }
 
-.top-bar {
-  width: 100%;
+.chart-top-bar {
+  width: 98%;
+  max-width: 98%;
   height: 50px;
   display: inline-flex;
   flex-direction: row;
@@ -249,11 +273,50 @@ export default {
   overflow: hidden;
 }
 
-.follower-btn {
-
+.follower-btn, .live-btn {
+  min-width: 50px;
+  width: auto;
+  max-height: 70px;
+  height: 30px;
+  line-height: 30px;
+  border-radius: 50px;
+  text-align: center;
+  font-weight: bold;
+  border: #2c3e50 1px solid;
+  padding: 0 5px;
+  user-select: none;
+  cursor: pointer;
+  transition: all .2s linear;
 }
 
-.live-btn {
+.follower-btn:hover, .live-btn:hover {
+  background: #2c3e50;
+  color: white;
+}
 
+.line {
+  width: 100px;
+  height: 1px;
+  border-bottom: #2c3e50 1px dashed;
+  margin: 10px 10px 10px calc((100% - 50% + 160px) * -1);
+}
+
+.fans-chart {
+  width: 96%;
+  max-width: 96%;
+  height: calc(100% - 50px - 10px);
+  border-radius: 6px;
+  /*box-shadow: 0 0 5px 1px rgba(40, 40, 40, 0.51);*/
+}
+
+.fans-card {
+
+}
+</style>
+
+<style>
+.chart-top-btn-active {
+  background: #2c3e50;
+  color: white;
 }
 </style>
