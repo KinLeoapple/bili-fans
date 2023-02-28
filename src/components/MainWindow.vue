@@ -21,7 +21,7 @@
         </svg>
       </div>
     </div>
-<!--    <div class="line"></div>-->
+    <!--    <div class="line"></div>-->
     <div class="chart-box">
       <!-- 实现录播、查看粉丝数等功能 -->
       <div class="chart-top-bar">
@@ -29,13 +29,9 @@
         <span class="live-btn"><em>Live</em></span>
       </div>
       <div class="line"></div>
-      <div class="fans-chart">
-        <div class="fans-card">
-          <div class="fans-card-date"></div>
-          <div class="fans-card-number loading"></div>
-          <div class="fans-card-compare loading"></div>
-        </div>
-      </div>
+      <perfect-scrollbar class="chart-scroll">
+        <div class="fans-chart"></div>
+      </perfect-scrollbar>
     </div>
   </div>
 </template>
@@ -61,6 +57,7 @@ export default {
 
         this.switchUID()
         this.refreshWindow()
+        this.renderFollowerChart()
       })
     },
     // switch current uid
@@ -93,7 +90,37 @@ export default {
     },
     // render pass 7 days fans number
     renderFollowerChart() {
+      for (let i = 0; i < 7; i++) {
+        let template = `<div class="fans-card" date="${this.initDateTime(i)}">
+          <div class="fans-card-date">${this.initDateTime(i)}</div>
+          <svg class="fans-card-date-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+               viewBox="0 0 16 16">
+            <path fill-rule="evenodd"
+                  d="M4.854 14.854a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V3.5A2.5 2.5 0 0 1 6.5 1h8a.5.5 0 0 1 0 1h-8A1.5 1.5 0 0 0 5 3.5v9.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4z"/>
+          </svg>
+          <div style="clear: both"></div>
+          <p class="fans-card-number loading"></p>
+          <div class="match-line"></div>
+          <p class="fans-card-compare loading"></p>
+          <div style="clear: both"></div>
+        </div>`
 
+        $('.fans-chart').append(template)
+      }
+    },
+    initDateTime: function (day) {
+      let nowDate = new Date()
+      let agoDate = new Date(nowDate)
+      let nowDay = nowDate.getDate()
+
+      day = -day + nowDay
+      agoDate.setDate(day)
+
+      let agoDay = agoDate.getDate()
+      let agoMonth = agoDate.getMonth() + 1
+      let agoYear = agoDate.getFullYear()
+
+      return (agoYear.toString() + '-' + agoMonth.toString().padStart(2, '0') + '-' + agoDay.toString().padStart(2, '0'))
     },
     // get all user info from server
     getAllInfo(uid) {
@@ -251,8 +278,8 @@ export default {
   min-width: 98%;
   width: 98%;
   max-width: 98%;
-  min-height: calc(100% - 10px - 50px - 5px - 1px);
-  max-height: calc(100% - 10px - 50px - 5px - 1px);
+  min-height: calc(100% - 10px - 50px - 2px - 1px);
+  max-height: calc(100% - 10px - 50px - 2px - 1px);
   border-radius: 6px;
   display: inline-flex;
   flex-direction: column;
@@ -301,16 +328,27 @@ export default {
   margin: 10px 10px 10px calc((100% - 50% + 160px) * -1);
 }
 
+.chart-scroll {
+  width: 100%;
+  min-height: calc(100% - 50px - 10px - 20px);
+  max-height: calc(100% - 50px - 10px - 20px);
+  overflow: hidden;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
 .fans-chart {
   width: 96%;
   max-width: 96%;
-  height: calc(100% - 50px - 10px);
+  min-height: calc(100% - 50px - 10px);
+  height: auto;
   border-radius: 6px;
-  /*box-shadow: 0 0 5px 1px rgba(40, 40, 40, 0.51);*/
-}
-
-.fans-card {
-
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
 }
 </style>
 
@@ -318,5 +356,70 @@ export default {
 .chart-top-btn-active {
   background: #2c3e50;
   color: white;
+}
+
+.fans-card {
+  min-width: 90%;
+  max-width: 90%;
+  min-height: 70px;
+  max-height: 70px;
+  border-radius: 10px;
+  border: #2c3e50 1px solid;
+  transition: all .2s linear;
+}
+
+.fans-card:hover {
+  box-shadow: 0 0 10px 1px rgba(40, 40, 40, 0.51);
+}
+
+.fans-card-date {
+  width: 100px;
+  height: 25px;
+  border-radius: 6px;
+  background: #2c3e50;
+  color: white;
+  text-align: center;
+  line-height: 25px;
+  margin: 5px 3px;
+  user-select: none;
+  display: inline-block;
+  float: left;
+}
+
+.fans-card-date-icon {
+  width: 16px;
+  height: 16px;
+  transform: rotateY(180deg);
+  margin: 15px 0 2px 0;
+  display: inline-block;
+  float: left;
+}
+
+.fans-card-number {
+  min-width: 140px;
+  width: 100px;
+  height: 30px;
+  margin: 0 45px;
+  display: inline-block;
+  float: left;
+}
+
+.match-line {
+  width: 320px;
+  height: 1px;
+  border-bottom: #2c3e50 1px dashed;
+  /*display: inline-block;*/
+  /*float: left;*/
+  margin-top: 15px;
+  margin-left: 150px;
+}
+
+.fans-card-compare {
+  min-width: 100px;
+  width: 100px;
+  height: 30px;
+  display: inline-block;
+  float: right;
+  margin: -16px 10px;
 }
 </style>
