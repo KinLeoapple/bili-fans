@@ -12,6 +12,7 @@ import axios from "axios";
 import https from "https";
 import fs from "fs";
 import {runBiliiveRecorder} from "@/services/run-BiliiveRecorder";
+import {RecServer} from "@/services/rec_server";
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -20,6 +21,7 @@ let ENV_STATUS
 let PROCESS
 let REC_PROCESS
 let PORT
+let REC_PORT
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -181,8 +183,15 @@ scanPort(8888, function (port) {
         })
 
         // Start BililiveRecorder
-        runBiliiveRecorder().then(process => {
-            REC_PROCESS = process
+        scanPort(2233, function (port) {
+            REC_PORT = port
+
+            runBiliiveRecorder(REC_PORT).then(process => {
+                REC_PROCESS = process
+
+                const rec_server = new RecServer(REC_PORT)
+                rec_server.start()
+            })
         })
     })
 })

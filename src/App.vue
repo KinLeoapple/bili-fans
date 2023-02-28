@@ -19,6 +19,10 @@ import {BililiveRec} from "@bililive/rec-sdk";
 
 const ipcRenderer = window.require('electron').ipcRenderer;
 
+let REC_PORT
+// eslint-disable-next-line no-unused-vars
+let bRecInstance
+
 export default {
   name: 'App',
   mounted() {
@@ -26,8 +30,9 @@ export default {
       let isRun = ipcRenderer.sendSync('window-run')
       if (isRun) {
         clearInterval(runLoop)
-        // eslint-disable-next-line no-unused-vars
-        const bRecInstance = new BililiveRec({httpUrl: "http://localhost:2356"})
+        REC_PORT = ipcRenderer.sendSync('rec-port')
+        bRecInstance = new BililiveRec({httpUrl: `http://localhost:${REC_PORT}`})
+        console.log(REC_PORT)
 
         this.$refs["side-bar"].run()
         this.$refs["main-window"].run()
