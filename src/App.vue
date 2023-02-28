@@ -75,4 +75,19 @@ html, body, #app {
   align-content: center;
   align-items: center;
 }
+
+.loading {
+  background: linear-gradient(90deg, #f2f2f2 25%, #d1d1d1 40%, #f2f2f2 50%);
+  background-size: 400% 400%;
+  animation: loading 1.5s ease infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
 </style>

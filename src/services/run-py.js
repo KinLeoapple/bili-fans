@@ -6,6 +6,7 @@ const fs = require('fs');
 // Python path for windows
 const pythonPath = './venv/python.exe'
 const lockFile = './venv.lock'
+
 let workerProcess = undefined
 
 export function runPython(PORT) {

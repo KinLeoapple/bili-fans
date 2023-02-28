@@ -15,6 +15,7 @@ const getPipPath = venvPath + '/get-pip.py'
 const python310_pth = venvPath + '/python310._pth'
 const py = './app.py'
 const requirements = './requirements.txt'
+const bililiveRecorder = './BililiveRecorder'
 
 export function RuntimeEnvironment() {
     return run()
@@ -26,10 +27,10 @@ function run() {
         if (!fs.existsSync(lockFile)) {
             fs.writeFileSync(lockFile, '')
         }
-        Promise.all([createPy(), createRequirements(), createPyEnvironment()])
+        Promise.all([createPy(), createRequirements(), createPyEnvironment(), downloadBililiveRecorder()])
             .then(resolveChain => {
                 console.log(resolveChain)
-                if (resolveChain[0] && resolveChain[1] && resolveChain[2]) {
+                if (resolveChain[0] && resolveChain[1] && resolveChain[2] && resolveChain[3]) {
                     try {
                         fse.unlinkSync(requirements)
                     } catch (err) {
@@ -42,6 +43,7 @@ function run() {
                     fse.rmdirSync(venvPath)
                     fse.unlinkSync(requirements)
                     fse.unlinkSync(py)
+                    fse.unlinkSync(bililiveRecorder)
                     fse.unlinkSync(lockFile)
                     resolve('BAD')
                 }
@@ -134,7 +136,7 @@ function downloadPy(url, pythonEmbed) {
                 if (err) {
                     resolve(false)
                 } else {
-                    unzipPy(pythonEmbed).then(r => {
+                    unzipFile(pythonEmbed, venvPath).then(r => {
                         if (r) {
                             (async () => {
                                 fs.writeFile(getPipPath, await download('https://bootstrap.pypa.io/get-pip.py'), err => {
@@ -167,7 +169,7 @@ function downloadPy(url, pythonEmbed) {
                                                     }
                                                 })
                                             }
-                                        });
+                                        })
                                     }
                                 })
                             })()
@@ -176,17 +178,43 @@ function downloadPy(url, pythonEmbed) {
                         }
                     })
                 }
-            });
+            })
         })()
     })
 }
 
-function unzipPy(pythonEmbed) {
+function downloadBililiveRecorder() {
+    // https://rec.danmuji.org/user/install/cli/
+    // https://rec.danmuji.org/user/install/cli/#%E4%BE%BF%E6%90%BA%E6%A8%A1%E5%BC%8F%E8%BF%90%E8%A1%8C
+
+    const url = 'https://github.com/BililiveRecorder/BililiveRecorder/releases/latest/download/BililiveRecorder-CLI-win-x64.zip'
+    const recorderZip = './python-3.10.10-embed-amd64.zip'
+
     return new Promise(resolve => {
-        compressing.zip.uncompress(pythonEmbed, venvPath)
+        if (!fs.existsSync(bililiveRecorder)) {
+            (async () => {
+                fs.writeFile(recorderZip, await download(url), err => {
+                    if (err) {
+                        resolve(false)
+                    } else {
+                        unzipFile(recorderZip, bililiveRecorder).then(r => {
+                            resolve(r)
+                        })
+                    }
+                })
+            })()
+        } else {
+            resolve(true)
+        }
+    })
+}
+
+function unzipFile(zipFile, targetPath) {
+    return new Promise(resolve => {
+        compressing.zip.uncompress(zipFile, targetPath)
             // eslint-disable-next-line no-unused-vars
             .then(_ => {
-                fs.unlinkSync(pythonEmbed)
+                fs.unlinkSync(zipFile)
                 resolve(true)
             })
             .catch(err => {

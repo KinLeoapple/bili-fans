@@ -19,46 +19,6 @@ let ENV_STATUS
 let PROCESS
 let PORT
 
-// Scan usable port
-scanPort(8888, function (port) {
-    PORT = port
-    new Promise(resolve => {
-        resolve(port)
-    }).then(PORT => {
-        console.log('Usable Port Found: ' + PORT)
-
-        let bindPort = https.createServer(() => {
-        })
-        bindPort.listen(PORT)
-
-        console.log(`Port ${PORT} Bound`)
-
-        // create runtime environment
-        RuntimeEnvironment().then(ENV => {
-            ENV_STATUS = ENV
-            console.log('Environment ' + ENV)
-            if (ENV === 'OK') {
-                bindPort.close()
-            } else if (ENV === 'BAD') {
-                process.exit()
-            }
-        })
-
-
-        // Start Python
-        runPython(PORT).then(process => {
-            PROCESS = process
-
-            // ONLY FOR TESTING
-            // let PORT = 5000
-
-            // Start Server
-            const server = new Server(PORT)
-            server.start()
-        })
-    })
-})
-
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
     {scheme: 'app', privileges: {secure: true, standard: true}}
@@ -174,4 +134,44 @@ if (isDevelopment) {
 
 process.on('unhandledRejection', error => {
     console.log('unhandledRejection', error.message);
+})
+
+// Scan usable port
+scanPort(8888, function (port) {
+    PORT = port
+    new Promise(resolve => {
+        resolve(port)
+    }).then(PORT => {
+        console.log('Usable Port Found: ' + PORT)
+
+        let bindPort = https.createServer(() => {
+        })
+        bindPort.listen(PORT)
+
+        console.log(`Port ${PORT} Bound`)
+
+        // create runtime environment
+        RuntimeEnvironment().then(ENV => {
+            ENV_STATUS = ENV
+            console.log('Environment ' + ENV)
+            if (ENV === 'OK') {
+                bindPort.close()
+            } else if (ENV === 'BAD') {
+                process.exit()
+            }
+        })
+
+
+        // Start Python
+        runPython(PORT).then(process => {
+            PROCESS = process
+
+            // ONLY FOR TESTING
+            // let PORT = 5000
+
+            // Start Server
+            const server = new Server(PORT)
+            server.start()
+        })
+    })
 })

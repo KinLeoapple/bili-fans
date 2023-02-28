@@ -38,6 +38,7 @@ const ipcRenderer = window.require('electron').ipcRenderer;
 
 let PORT
 let isDisable = true
+let listUp = []
 
 export default {
   name: "SideBar",
@@ -57,6 +58,8 @@ export default {
       let list = ipcRenderer.sendSync('up-list')
       list = quickSort(list)
       console.log(list.length)
+      listUp = list
+
       list.forEach(id => {
         sleep(200).then(() => {
 
@@ -113,7 +116,9 @@ export default {
       })
     },
     // append up to list
-    appendToList(id) {
+    appendToList(id, isSort) {
+      let list = $('.list')
+
       let html =
           `<li class="up" uid="${id}">
                 <img class="avatar" src="${require('@/assets/img/avatar.png')}" alt="" crossOrigin="anonymous"/>
@@ -122,7 +127,25 @@ export default {
                 <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                 </svg>
                 </li>`
-      $('.list').append(html)
+
+      if (isSort === undefined) {
+        list.append(html)
+      } else if (isSort === true) {
+        // sort
+        listUp[listUp.length] = id
+        listUp = quickSort(listUp)
+        let insertIndex = listUp.indexOf(id)
+
+        if (insertIndex !== -1) {
+          list.children().each((index, el) => {
+            if (index === insertIndex) {
+              $(el).before(html)
+            }
+          })
+        } else {
+          list.prepend(html)
+        }
+      }
 
       this.getInfo(id)
           .then(resolve => {
@@ -134,9 +157,10 @@ export default {
             let name = data.name
             el.attr('title', name)
             el.html(name)
-          }).catch(err => {
-        console.log(err)
-      })
+          })
+          .catch(err => {
+            console.log(err)
+          })
 
       $(`[uid=${id}]`).on('click', () => {
         let up = $(`[uid=${id}]`)
@@ -147,7 +171,8 @@ export default {
         up.addClass('up-active')
       })
 
-      $(`[uid=${id}] .delete-up`).on('click', () => {
+      $(`[uid=${id}] .delete-up`).on('click', event => {
+        event.stopPropagation()
         let isDelete = ipcRenderer.sendSync('delete', id)
         if (isDelete) {
           let el = $(`[uid=${id}]`)
@@ -180,7 +205,7 @@ export default {
           console.log(result)
           if (result.res === true) {
             msg.html('Added')
-            this.appendToList(val)
+            this.appendToList(val, true)
           } else {
             msg.html(result.msg)
           }

@@ -22,6 +22,13 @@
       </div>
     </div>
     <div class="line"></div>
+    <div class="chart-box">
+      <!-- 实现录播、查看粉丝数等功能 -->
+      <div class="top-bar">
+        <div class="follower-btn"></div>
+        <div class="live-btn"></div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -75,6 +82,10 @@ export default {
           this.scrollNumber(countUp, data.follower)
         })
       })
+    },
+    // render pass 7 days fans number
+    renderFollowerChart() {
+
     },
     // get all user info from server
     getAllInfo(uid) {
@@ -225,5 +236,16 @@ export default {
   border-radius: 10px;
   background: #2c3e50;
   margin-top: 10px;
+}
+
+.top-bar {
+  width: 100%;
+  height: 50px;
+  display: inline-flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
 }
 </style>

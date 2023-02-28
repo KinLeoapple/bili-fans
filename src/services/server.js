@@ -1,4 +1,5 @@
 import {ipcMain} from 'electron';
+import axios from "axios";
 
 const NeDB = require('nedb');
 
@@ -44,14 +45,25 @@ export class Server {
                         },
                         function (err, docs) {
                             if (docs.length === 0) {
-                                db.insert({
-                                    'uid': uid,
-                                    'fans': {}
-                                }, function (err) {
-                                    event.returnValue = {
-                                        res: (err === null),
-                                        msg: err
+                                axios({
+                                    method: 'post',
+                                    baseURL: 'http://localhost:' + PORT + '/live-info/',
+                                    data: {
+                                        uid: uid
                                     }
+                                }).then(resolve => {
+                                    let data = resolve.data
+
+                                    db.insert({
+                                        'uid': uid,
+                                        'liveid': data.live_room.roomid,
+                                        'fans': {}
+                                    }, function (err) {
+                                        event.returnValue = {
+                                            res: (err === null),
+                                            msg: err
+                                        }
+                                    })
                                 })
                             } else {
                                 event.returnValue = {
