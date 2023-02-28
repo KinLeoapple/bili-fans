@@ -11,12 +11,14 @@ import {RuntimeEnvironment} from "@/services/create-runtime-environment";
 import axios from "axios";
 import https from "https";
 import fs from "fs";
+import {runBiliiveRecorder} from "@/services/run-BiliiveRecorder";
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // eslint-disable-next-line no-unused-vars
 let ENV_STATUS
 let PROCESS
+let REC_PROCESS
 let PORT
 
 // Scheme must be registered before the app is ready
@@ -33,6 +35,9 @@ function quit() {
         // Shutdown Python Process
         if (PROCESS !== undefined) {
             PROCESS.kill('SIGINT')
+        }
+        if (REC_PROCESS !== undefined) {
+            REC_PROCESS.kill('SIGINT')
         }
         app.quit()
     }).catch(err => {
@@ -84,7 +89,8 @@ ipcMain.on('window-close', () => win.destroy())
 ipcMain.on('window-min', () => win.minimize())
 ipcMain.on('window-run', event => {
     let serverLock = './server.lock'
-    event.returnValue = !fs.existsSync(serverLock);
+    let recorderLock = './recorder.lock'
+    event.returnValue = !fs.existsSync(serverLock) && !fs.existsSync(recorderLock);
 })
 
 // Quit when all windows are closed.
@@ -172,6 +178,11 @@ scanPort(8888, function (port) {
             // Start Server
             const server = new Server(PORT)
             server.start()
+        })
+
+        // Start BililiveRecorder
+        runBiliiveRecorder().then(process => {
+            REC_PROCESS = process
         })
     })
 })

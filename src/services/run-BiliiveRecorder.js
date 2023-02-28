@@ -1,5 +1,6 @@
 import {callback} from "@/services/process-callback";
 
+
 const child_process = require('child_process');
 const fs = require('fs');
 
@@ -8,22 +9,36 @@ const recorder = './BililiveRecorder/BililiveRecorder.Cli.exe'
 
 let workerProcess = undefined
 
-export function runBiliiveRecorder(workspace = './Records', rooms = []) {
-    return new Promise(resolve =>  {
+export function runBiliiveRecorder(workspace = './Records') {
+    // https://rec.danmuji.org/user/install/cli/
+    // https://rec.danmuji.org/dev/sdk.js/
+
+    return new Promise(resolve => {
         let recorderLock = './recorder.lock'
+        let url = `"http://localhost:2356"`
+
+        if (!fs.existsSync(recorderLock)) {
+            fs.writeFileSync(recorderLock, '')
+        }
 
         let runLoop = setInterval(() => {
             if (!fs.existsSync(lockFile)) {
                 clearInterval(runLoop)
 
+                if (!fs.existsSync(workspace)) {
+                    fs.mkdirSync(workspace)
+                }
+
                 workerProcess = child_process.spawn(recorder,
                     [
-                        `p`, workspace, rooms
+                        'run', '--bind', `"${url}"`, `"${workspace}"`
                     ]);
+                console.log('BiliiveRecorder Running on ' + url)
                 callback(workerProcess)
+
                 fs.unlinkSync(recorderLock)
 
-                resolve(runLoop)
+                resolve(workerProcess)
             }
         }, 500)
     })

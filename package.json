@@ -13,6 +13,7 @@
   },
   "main": "background.js",
   "dependencies": {
+    "@bililive/rec-sdk": "^2.1.1-alpha.0",
     "axios": "^1.3.4",
     "compressing": "^1.8.0",
     "core-js": "^3.8.3",

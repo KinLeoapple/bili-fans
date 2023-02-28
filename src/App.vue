@@ -15,6 +15,8 @@ import MenuBar from "@/components/MenuBar.vue";
 </template>
 
 <script>
+import {BililiveRec} from "@bililive/rec-sdk";
+
 const ipcRenderer = window.require('electron').ipcRenderer;
 
 export default {
@@ -24,6 +26,8 @@ export default {
       let isRun = ipcRenderer.sendSync('window-run')
       if (isRun) {
         clearInterval(runLoop)
+        // eslint-disable-next-line no-unused-vars
+        const bRecInstance = new BililiveRec({httpUrl: "http://localhost:2356"})
 
         this.$refs["side-bar"].run()
         this.$refs["main-window"].run()

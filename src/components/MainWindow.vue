@@ -248,4 +248,12 @@ export default {
   gap: 10px;
   overflow: hidden;
 }
+
+.follower-btn {
+
+}
+
+.live-btn {
+
+}
 </style>
