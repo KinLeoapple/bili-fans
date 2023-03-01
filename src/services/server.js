@@ -18,7 +18,7 @@ export class Server {
         PORT = port
 
         let rule = new schedule.RecurrenceRule()
-        rule.hour = 7
+        rule.hour = 0
         rule.minute = 0
         rule.second = 0
         job = schedule.scheduleJob(rule, () => {
@@ -30,10 +30,12 @@ export class Server {
 
     start() {
         port()
+        upList()
         appendUID()
         removeUID()
         switchUID()
         followers()
+        liveRoom()
     }
 
     stop() {
@@ -48,7 +50,9 @@ function port() {
     ipcMain.on('port', event => {
         event.returnValue = PORT
     })
+}
 
+function upList() {
     // get up list
     ipcMain.on('up-list', event => {
         let list = []
@@ -59,7 +63,7 @@ function port() {
                 })
                 event.returnValue = list
             })
-    });
+    })
 }
 
 function appendUID() {
@@ -87,9 +91,17 @@ function appendUID() {
                                     'liveid': data.live_room.roomid,
                                     'fans': {}
                                 }, function (err) {
-                                    event.returnValue = {
-                                        res: (err === null),
-                                        msg: err
+                                    if (err === null) {
+                                        event.sender.send('append-room', uid, data.live_room.roomid)
+                                        event.returnValue = {
+                                            res: true,
+                                            msg: err
+                                        }
+                                    } else {
+                                        event.returnValue = {
+                                            res: false,
+                                            msg: err
+                                        }
                                     }
                                 })
                             })
@@ -121,6 +133,7 @@ function removeUID() {
         db.remove({
             'uid': uid
         }, function (err) {
+            event.sender.send('remove-room', uid)
             event.returnValue = (err === null)
         })
     })
@@ -265,5 +278,21 @@ function getFollowers(uid) {
         data: {
             uid: uid
         }
+    })
+}
+
+function liveRoom() {
+    // get all live room ID
+    ipcMain.on('live-room', (event) => {
+        db.find({}, function (err, docs) {
+            let list = []
+            docs.forEach(doc => {
+                list[list.length] = {
+                    uid: doc.uid,
+                    liveid: doc.liveid
+                }
+            })
+            event.returnValue = list
+        })
     })
 }

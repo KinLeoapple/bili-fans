@@ -11,6 +11,7 @@
           </svg>
         </div>
         <span class="fans-number">0</span>
+        <div class="current-compare"></div>
       </div>
       <div class="refresh-window-btn-box">
         <svg class="refresh-window-btn" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
@@ -30,7 +31,14 @@
       <div class="line"></div>
       <perfect-scrollbar class="chart-scroll">
         <div class="fans-chart"></div>
-        <div class="live-chart"></div>
+        <div class="live-chart">
+          <div class="live-chart-left">
+            <img src="" class="live-cover" alt=""/>
+          </div>
+          <div class="live-chart-right">
+
+          </div>
+        </div>
       </perfect-scrollbar>
     </div>
   </div>
@@ -41,12 +49,18 @@ import axios from "axios";
 import {sleep} from "@/assets/js/sleep";
 import {CountUp} from "countup.js";
 import $ from 'jquery';
+import {BililiveRec} from "@bililive/rec-sdk";
 
 const ipcRenderer = window.require('electron').ipcRenderer;
 
 let PORT
 let isDisable = true
 let UID = ''
+let current = 0
+let REC_PORT
+let bRecInstance
+let liveRooms = {}
+let liveCover = {}
 
 export default {
   name: "MainWindow",
@@ -55,7 +69,26 @@ export default {
       this.$nextTick(() => {
         PORT = ipcRenderer.sendSync('port')
 
+        this.runBililiveRecorder()
+
+        // append current all live room
+        let rooms = ipcRenderer.sendSync('live-room')
+        rooms.forEach(r => {
+          this.appendLiveRoom(r.uid, r.liveid)
+        })
+
+        // append live room
+        ipcRenderer.on('append-room', (event, uid, liveid) => {
+          this.appendLiveRoom(uid, liveid)
+        })
+
+        // remove live room
+        ipcRenderer.on('remove-room', (event, uid) => {
+          this.removeLiveRoom(uid)
+        })
+
         this.fansBtn()
+        this.liveBtn()
         this.switchUID()
         this.refreshWindow()
       })
@@ -85,9 +118,11 @@ export default {
           let data = resolve.data
           console.log(data)
 
+          current = data.follower
           this.scrollNumber(countUp, data.follower)
 
           this.renderFollowerChart()
+          this.renderLiveChart()
         })
       })
     },
@@ -153,18 +188,13 @@ export default {
             countable = i
             if (list[i + 1] !== -1) {
               let compare = list[countable] - list[i + 1]
-              if (compare > 0) {
+              if (compare >= 0) {
                 chart.children()[countable].querySelector('.fans-card-compare').innerHTML = template + Math.abs(compare)
                 $(chart.children()[countable].querySelector('.fans-card-compare .compare-pointer')).css('transform', 'rotateX(180deg)')
                 $(chart.children()[countable].querySelector('.fans-card-compare')).css('color', '#6eb025')
               } else if (compare < 0) {
                 chart.children()[countable].querySelector('.fans-card-compare').innerHTML = template + Math.abs(compare)
                 $(chart.children()[countable].querySelector('.fans-card-compare')).css('color', '#d04748')
-              } else {
-                let html = `<svg class="compare-pointer" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/>
-                        </svg>`
-                chart.children()[countable].querySelector('.fans-card-compare').innerHTML = html + compare
               }
             } else {
               chart.children()[i + 1].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
@@ -181,7 +211,30 @@ export default {
           chart.children()[countable].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
           $(chart.children()[countable].querySelector('.fans-card-compare')).removeClass('loading')
         }
+        this.compareCurrent()
       })
+    },
+    // compare to current fans number
+    compareCurrent() {
+      let template = `<svg class="compare-pointer" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                </svg>`
+
+      let chart = $('.fans-chart')
+      let latest = chart.children()[0].querySelector('.fans-card-number').innerHTML
+      if (latest !== undefined && latest !== null && latest !== 'NO DATA') {
+        latest = parseInt(latest.toString().replaceAll(',', ''))
+        let compare = current - latest
+        let compareElement = $('.current-compare')
+        if (current < 0) {
+          compareElement.html(template + Math.abs(compare))
+          compareElement.css('color', '#d04748')
+        } else if (current >= 0) {
+          compareElement.html(template + Math.abs(compare))
+          $(compareElement[0].querySelector('.compare-pointer')).css('transform', 'rotateX(180deg)')
+          compareElement.css('color', '#6eb025')
+        }
+      }
     },
     initDateTime: function (day) {
       let nowDate = new Date()
@@ -207,13 +260,18 @@ export default {
         }
       })
     },
+    // scroll number animation
     scrollNumber(countUp, num) {
       countUp.update(num)
       countUp.start()
     },
+    // render live chart
+    renderLiveChart() {
+      $('.live-cover').attr('src', liveCover[UID])
+    },
     // refresh window
     refreshWindow() {
-      $('.refresh-window-btn').on('click', () => {
+      $('.refresh-window-btn-box').on('click', () => {
         if (!isDisable) {
           let btn = $('.refresh-window-btn')
           btn.css('transform', 'rotate(-360deg)')
@@ -236,6 +294,102 @@ export default {
         }
       })
     },
+    // run recorder instance
+    runBililiveRecorder() {
+      REC_PORT = ipcRenderer.sendSync('rec-port')
+      bRecInstance = new BililiveRec({httpUrl: `http://localhost:${REC_PORT}`})
+      bRecInstance.getConfig().then(config => {
+        config.optionalSaveStreamCover = {hasValue: true, Value: true}
+        bRecInstance.setConfig(config)
+      })
+    },
+    // append live room
+    appendLiveRoom: function (uid, liveid) {
+      if (liveid !== undefined) {
+        bRecInstance.addRoom({roomId: Number(liveid), autoRecord: true}).then(() => {
+          liveRooms[uid] = Number(liveid)
+          this.updateLiveCover(uid).then(cover => {
+            liveCover[uid] = cover
+          })
+
+          setTimeout(() => {
+            this.refreshRoomInfo(Number(liveid))
+          }, 6000)
+        })
+      } else {
+        liveRooms[uid] = undefined
+      }
+    },
+    // remove live room
+    removeLiveRoom: function (uid) {
+      if (liveRooms[uid] !== undefined) {
+        let liveid = liveRooms[uid]
+        bRecInstance.fetchRoom(liveid).then(room => {
+          room.stop().then(() => {
+            room.remove().then(() => {
+              delete liveRooms[uid]
+              delete liveCover[uid]
+            })
+          })
+        })
+      }
+    },
+    // refresh room info (better refresh in 6s, which is 6000ms)
+    refreshRoomInfo(liveid) {
+      bRecInstance.refreshRooms().then(() => {
+        bRecInstance.fetchRoom(liveid).then(info => {
+          console.log(info)
+        })
+      })
+    },
+    // stop current room recording
+    stopRec: async function (liveid) {
+      let room = await bRecInstance.getRoomByRoomId(liveid)
+      return room.stop()
+    },
+    startRec: async function (liveid) {
+      let room = await bRecInstance.getRoomByRoomId(liveid)
+      return room.start()
+    },
+    // update live room info
+    updateLiveInfo(uid) {
+      return axios({
+        method: 'post',
+        baseURL: 'http://localhost:' + PORT + '/live-info/',
+        data: {
+          uid: uid
+        }
+      })
+    },
+    // update live room cover
+    updateLiveCover(uid) {
+      return new Promise(resolve => {
+        this.updateLiveInfo(uid).then(info => {
+          let cover = info.data.live_room.cover
+          let url = `//wsrv.nl/?url=${cover}`
+          this.convertImgToBase64(url, base64Img => {
+            resolve(base64Img)
+          })
+        })
+      })
+    },
+    // convert image url to Base64
+    convertImgToBase64(url, callback) {
+      let canvas = document.createElement('CANVAS'),
+          ctx = canvas.getContext('2d'),
+          img = new Image;
+      img.crossOrigin = 'Anonymous';
+      img.onload = function () {
+        canvas.height = img.height;
+        canvas.width = img.width;
+        ctx.drawImage(img, 0, 0);
+        let dataURL = canvas.toDataURL('image/jpeg');
+        callback.call(this, dataURL);
+        canvas = null;
+      };
+      img.src = url;
+    },
+    // fans button
     fansBtn() {
       $('.follower-btn').on('click', () => {
         let btn = $('.follower-btn')
@@ -247,6 +401,23 @@ export default {
         setTimeout(() => {
           $('.live-chart').hide()
           let fansChart = $('.fans-chart')
+          fansChart.show()
+          fansChart.css('opacity', 1)
+        }, 200)
+      })
+    },
+    // live button
+    liveBtn() {
+      $('.live-btn').on('click', () => {
+        let btn = $('.live-btn')
+        btn.siblings().each((index, el) => {
+          $(el).removeClass('chart-top-btn-active')
+        })
+        btn.addClass('chart-top-btn-active')
+        $('.live-chart').css('opacity', 0)
+        setTimeout(() => {
+          $('.fans-chart').hide()
+          let fansChart = $('.live-chart')
           fansChart.show()
           fansChart.css('opacity', 1)
         }, 200)
@@ -328,6 +499,19 @@ export default {
   padding: 2px 5px;
   letter-spacing: 2px;
   text-align: center;
+}
+
+.current-compare {
+  font-family: LCD, serif;
+  min-width: 100px;
+  width: auto;
+  height: 30px;
+  text-align: left;
+  line-height: 30px;
+  font-weight: bold;
+  font-size: 20px;
+  overflow: hidden;
+  background: white;
 }
 
 .refresh-window-btn-box {
@@ -431,6 +615,32 @@ export default {
   align-items: center;
   gap: 8px;
   overflow: hidden;
+}
+
+.live-chart-left, .live-chart-right {
+  width: 50%;
+  height: 100%;
+}
+
+.live-chart {
+  width: 96%;
+  max-width: 96%;
+  min-height: calc(100% - 50px - 10px);
+  height: auto;
+  border-radius: 6px;
+  display: inline-flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.live-cover {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+
 }
 </style>
 

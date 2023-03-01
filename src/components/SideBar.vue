@@ -32,7 +32,7 @@
 import axios from "axios";
 import $ from "jquery";
 import {sleep} from "@/assets/js/sleep";
-import {quickSort} from "@/assets/js/quicksort";
+import {Sort} from "@/assets/js/quicksort";
 
 const ipcRenderer = window.require('electron').ipcRenderer;
 
@@ -56,7 +56,7 @@ export default {
     updateList(clickedUID) {
       isDisable = true
       let list = ipcRenderer.sendSync('up-list')
-      list = quickSort(list)
+      Sort(list)
       console.log(list.length)
       listUp = list
 
@@ -74,7 +74,7 @@ export default {
     },
     // refresh up list
     refreshList() {
-      $('.refresh-list-btn').on('click', () => {
+      $('.refresh-list-btn-box').on('click', () => {
         if (!isDisable) {
           let btn = $('.refresh-list-btn')
           btn.css('transform', 'rotate(-360deg)')
@@ -133,15 +133,19 @@ export default {
       } else if (isSort === true) {
         // sort
         listUp[listUp.length] = id
-        listUp = quickSort(listUp)
+        Sort(listUp)
         let insertIndex = listUp.indexOf(id)
 
         if (insertIndex !== -1) {
-          list.children().each((index, el) => {
-            if (index === insertIndex) {
-              $(el).before(html)
-            }
-          })
+          if (insertIndex !== list.children().length) {
+            list.children().each((index, el) => {
+              if (index === insertIndex) {
+                $(el).before(html)
+              }
+            })
+          } else {
+            list.append(html)
+          }
         } else {
           list.prepend(html)
         }
@@ -378,7 +382,7 @@ export default {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   margin-top: 10px;
   padding: 0;
   gap: 5px;
