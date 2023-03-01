@@ -24,6 +24,7 @@
     "fs-extra": "^11.1.0",
     "jquery": "^3.6.3",
     "nedb": "^1.8.0",
+    "node-schedule": "^2.1.1",
     "vue": "^3.2.13",
     "vue3-perfect-scrollbar": "^1.6.1"
   },

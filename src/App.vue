@@ -89,7 +89,7 @@ html, body, #app {
   background: linear-gradient(90deg, #f2f2f2 25%, #d1d1d1 40%, #f2f2f2 50%);
   background-size: 400% 400%;
   border-radius: 3px;
-  animation: loading 1.5s ease infinite;
+  animation: loading 1.8s ease infinite;
 }
 
 @keyframes loading {
