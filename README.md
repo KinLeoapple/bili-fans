@@ -1,5 +1,7 @@
 # bili-fans
 
+NodeJs - 16.19.1
+
 ## Project setup
 ```
 npm install
