@@ -72,7 +72,7 @@ async function createWindow() {
     })
 
     Menu.setApplicationMenu(null)
-    win.setIcon('./src/assets/img/logo.png')
+    // win.setIcon('./src/assets/img/logo.png')
     win.center()
 
     if (process.env.WEBPACK_DEV_SERVER_URL) {

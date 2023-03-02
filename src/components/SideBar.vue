@@ -155,7 +155,7 @@ export default {
           .then(resolve => {
             let data = resolve.data
 
-            let avatar = `//wsrv.nl/?url=${data.face}&w=300&h=300&fit=cover&mask=circle`
+            let avatar = `https://wsrv.nl/?url=${data.face}&w=300&h=300&fit=cover&mask=circle`
             $(`[uid=${id}] .avatar`).attr('src', avatar)
             let el = $(`[uid=${id}] .name`)
             let name = data.name

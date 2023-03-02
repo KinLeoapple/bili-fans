@@ -1,6 +1,7 @@
 export function Py_requirements() {
     return `aiohttp==3.8.4
 aiosignal==1.3.1
+altgraph==0.17.3
 anyio==3.6.2
 APScheduler==3.10.0
 async-timeout==4.0.2
@@ -24,11 +25,15 @@ lxml==4.9.2
 MarkupSafe==2.1.2
 multidict==6.0.4
 nest-asyncio==1.5.6
+pefile==2023.2.7
 Pillow==9.4.0
 pyasn1==0.4.8
+pyinstaller==5.8.0
+pyinstaller-hooks-contrib==2023.0
 pypng==0.20220715.0
 pytz==2022.7.1
 pytz-deprecation-shim==0.1.0.post0
+pywin32-ctypes==0.2.0
 PyYAML==6.0
 qrcode==7.4.2
 requests==2.28.2

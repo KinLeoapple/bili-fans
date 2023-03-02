@@ -32,11 +32,21 @@
       <perfect-scrollbar class="chart-scroll">
         <div class="fans-chart"></div>
         <div class="live-chart">
-          <div class="live-chart-left">
-            <img src="" class="live-cover" alt=""/>
+          <div class="live-chart-top">
+            <div class="rec-btn-container">
+              <div class="rec-btn">
+                <div class="rec-btn-dot"></div>
+              </div>
+              <em>Recording</em>
+            </div>
+            <img src="" class="live-cover" alt="" crossorigin="anonymous"/>
           </div>
-          <div class="live-chart-right">
-
+          <div class="live-chart-bottom">
+            <div class="live-title-box">
+              <div class="live-is-stream"></div>
+              <span class="live-title"></span>
+            </div>
+            <div class="live-area"></div>
           </div>
         </div>
       </perfect-scrollbar>
@@ -61,6 +71,8 @@ let REC_PORT
 let bRecInstance
 let liveRooms = {}
 let liveCover = {}
+let liveStat = {}
+let currentLoop
 
 export default {
   name: "MainWindow",
@@ -101,6 +113,16 @@ export default {
           isDisable = true
           UID = uid
           $('.follower-btn').click()
+          if (currentLoop !== undefined) {
+            clearInterval(currentLoop)
+          }
+          $('.live-is-stream').css('background', '#d04748')
+          let liveTitle = $('.live-title')
+          liveTitle.html('')
+          liveTitle.addClass('loading')
+          let liveArea = $('.live-area')
+          liveArea.html('')
+          liveArea.addClass('loading')
           this.renderWindow(avatar)
           isDisable = false
         }
@@ -123,6 +145,8 @@ export default {
 
           this.renderFollowerChart()
           this.renderLiveChart()
+          this.resetLiveSwitch()
+          this.recordLiveSwitch()
         })
       })
     },
@@ -268,6 +292,9 @@ export default {
     // render live chart
     renderLiveChart() {
       $('.live-cover').attr('src', liveCover[UID])
+      currentLoop = setInterval(() => {
+        this.refreshRoomInfo(liveRooms[UID])
+      }, 6000)
     },
     // refresh window
     refreshWindow() {
@@ -311,10 +338,6 @@ export default {
           this.updateLiveCover(uid).then(cover => {
             liveCover[uid] = cover
           })
-
-          setTimeout(() => {
-            this.refreshRoomInfo(Number(liveid))
-          }, 6000)
         })
       } else {
         liveRooms[uid] = undefined
@@ -329,6 +352,7 @@ export default {
             room.remove().then(() => {
               delete liveRooms[uid]
               delete liveCover[uid]
+              delete liveStat[uid]
             })
           })
         })
@@ -338,18 +362,78 @@ export default {
     refreshRoomInfo(liveid) {
       bRecInstance.refreshRooms().then(() => {
         bRecInstance.fetchRoom(liveid).then(info => {
-          console.log(info)
+          let data = info.roomInfo
+          let liveArea = $('.live-area')
+          liveArea.removeClass('loading')
+          liveArea.html(data.areaNameParent + ' - ' + data.areaNameChild)
+          let liveTitle = $('.live-title')
+          liveTitle.removeClass('loading')
+          liveTitle.html(data.title)
+          if (data.streaming) {
+            $('.live-is-stream').css('background', '#6eb025')
+          } else {
+            $('.live-is-stream').css('background', '#d04748')
+          }
         })
       })
     },
+    // record live switcher
+    recordLiveSwitch() {
+      $('.rec-btn-dot').on('click', () => {
+        let dot = $('.rec-btn-dot')
+        // #6eb025
+        let recBtn = $('.rec-btn')
+        let recColor = this.colorHex(recBtn.css('background-color'))
+        console.log(recColor)
+        if (recColor === '#6eb025') {
+          recBtn.css('background-color', '#d04748')
+          dot.css('margin-left', '18px')
+          this.stopRec(liveRooms[UID])
+          $('.rec-btn-container em').html('NOT Recording')
+        } else {
+          recBtn.css('background-color', '#6eb025')
+          dot.css('margin-left', '0')
+          this.startRec(liveRooms[UID])
+          $('.rec-btn-container em').html('Recording')
+        }
+      })
+    },
+    // reset live switcher
+    resetLiveSwitch() {
+      let isRecording = true
+      if (liveStat[UID] === undefined) {
+        isRecording = true
+      } else {
+        isRecording = liveStat[UID]
+      }
+      let dot = $('.rec-btn-dot')
+      dot.off('click')
+      let recBtn = $('.rec-btn')
+      if (isRecording) {
+        recBtn.css('background', '#6eb025')
+        dot.css('margin-left', '0')
+        $('.rec-btn-container em').html('Recording')
+      } else {
+        recBtn.css('background', '#d04748')
+        dot.css('margin-left', '18px')
+        $('.rec-btn-container em').html('NOT Recording')
+      }
+    },
     // stop current room recording
     stopRec: async function (liveid) {
-      let room = await bRecInstance.getRoomByRoomId(liveid)
-      return room.stop()
+      bRecInstance.fetchRoom(liveid).then(room => {
+        room.stop()
+        liveStat[UID] = false
+        console.log(liveStat)
+      })
     },
+    // start current room recoding
     startRec: async function (liveid) {
-      let room = await bRecInstance.getRoomByRoomId(liveid)
-      return room.start()
+      bRecInstance.fetchRoom(liveid).then(room => {
+        room.start()
+        liveStat[UID] = true
+        console.log(liveStat)
+      })
     },
     // update live room info
     updateLiveInfo(uid) {
@@ -366,7 +450,7 @@ export default {
       return new Promise(resolve => {
         this.updateLiveInfo(uid).then(info => {
           let cover = info.data.live_room.cover
-          let url = `//wsrv.nl/?url=${cover}`
+          let url = `https://wsrv.nl/?url=${cover}`
           this.convertImgToBase64(url, base64Img => {
             resolve(base64Img)
           })
@@ -388,6 +472,26 @@ export default {
         canvas = null;
       };
       img.src = url;
+    },
+    colorHex: function (color) {
+      let reg = /^(rgb|RGB)/;
+
+      if (reg.test(color)) {
+        let strHex = "#";
+
+        let colorArr = color.replace(/(?:\(|\)|rgb|RGB)*/g, "").split(",");
+
+        for (let i = 0; i < colorArr.length; i++) {
+          let hex = Number(colorArr[i]).toString(16);
+          if (hex === "0") {
+            hex += hex;
+          }
+          strHex += hex;
+        }
+        return strHex;
+      } else {
+        return String(color);
+      }
     },
     // fans button
     fansBtn() {
@@ -615,11 +719,7 @@ export default {
   align-items: center;
   gap: 8px;
   overflow: hidden;
-}
-
-.live-chart-left, .live-chart-right {
-  width: 50%;
-  height: 100%;
+  opacity: 0;
 }
 
 .live-chart {
@@ -629,18 +729,105 @@ export default {
   height: auto;
   border-radius: 6px;
   display: inline-flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
   gap: 8px;
   overflow: hidden;
+  opacity: 0;
+}
+
+.live-chart-top, .live-chart-bottom {
+  width: 100%;
+  height: 50%;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .live-cover {
-  width: 100%;
+  width: 90%;
   height: auto;
   border-radius: 10px;
+}
 
+.live-title-box {
+  width: 100%;
+  height: 30px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.live-is-stream {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin: calc((30px - 8px) * .5);
+  display: inline-block;
+  float: left;
+  background: #d04748;
+  transition: all .2s linear;
+}
+
+.live-title {
+  min-width: 150px;
+  max-width: 230px;
+  height: 30px;
+  line-height: 30px;
+  text-align: left;
+  display: inline-block;
+  float: left;
+  font-weight: bold;
+}
+
+.live-area {
+  width: 100%;
+  height: 30px;
+  line-height: 30px;
+  text-align: left;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.rec-btn-container {
+  width: 100%;
+  height: 20px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  font-weight: bolder;
+}
+
+.rec-btn {
+  width: 40px;
+  height: 16px;
+  border-radius: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  background-color: #6eb025;
+  margin: 10px;
+  transition: all .2s linear;
+}
+
+.rec-btn-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  border: #2c3e50 1px solid;
+  transition: all .2s linear;
+}
+
+.rec-btn-dot:hover {
+  box-shadow: rgba(44, 62, 80, 0.8) 0 0 3px 1px;
 }
 </style>
 
@@ -659,10 +846,6 @@ export default {
   border: #2c3e50 1px solid;
   transition: all .2s linear;
 }
-
-/*.fans-card:hover {*/
-/*  box-shadow: 0 0 10px 1px rgba(40, 40, 40, 0.51);*/
-/*}*/
 
 .fans-card-date {
   width: 100px;
