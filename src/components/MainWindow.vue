@@ -25,8 +25,8 @@
     <div class="chart-box">
       <!-- 实现录播、查看粉丝数等功能 -->
       <div class="chart-top-bar">
-        <span class="follower-btn"><em>Fans</em></span>
         <span class="live-btn"><em>Live</em></span>
+        <span class="follower-btn"><em>Fans</em></span>
       </div>
       <div class="line"></div>
       <perfect-scrollbar class="chart-scroll">
@@ -112,7 +112,7 @@ export default {
         if (UID.toString() !== uid.toString()) {
           isDisable = true
           UID = uid
-          $('.follower-btn').click()
+          $('.live-btn').click()
           if (currentLoop !== undefined) {
             clearInterval(currentLoop)
           }
@@ -142,6 +142,10 @@ export default {
 
           current = data.follower
           this.scrollNumber(countUp, data.follower)
+
+          this.updateLiveCover(UID).then(cover => {
+            liveCover[UID] = cover
+          })
 
           this.renderFollowerChart()
           this.renderLiveChart()
@@ -291,7 +295,8 @@ export default {
     },
     // render live chart
     renderLiveChart() {
-      $('.live-cover').attr('src', liveCover[UID])
+      let cover = $('.live-cover')
+      cover.attr('src', liveCover[UID])
       currentLoop = setInterval(() => {
         this.refreshRoomInfo(liveRooms[UID])
       }, 6000)
@@ -301,21 +306,22 @@ export default {
       $('.refresh-window-btn-box').on('click', () => {
         if (!isDisable) {
           let btn = $('.refresh-window-btn')
+          let btnBox = $('.refresh-window-btn-box')
           btn.css('transform', 'rotate(-360deg)')
           btn.css('transition', 'all 0s linear')
           isDisable = true
 
           this.renderWindow()
 
-          btn.off('click')
-          $('.refresh-window-btn-box').css('cursor', 'not-allowed')
+          btnBox.off('click')
+          btnBox.css('cursor', 'not-allowed')
           setTimeout(() => {
             btn.css('transform', 'none')
             btn.css('transition', 'all .5s linear')
           }, 550)
           setTimeout(() => {
             isDisable = false
-            $('.refresh-window-btn-box').css('cursor', 'pointer')
+            btnBox.css('cursor', 'pointer')
             this.refreshWindow()
           }, 5000)
         }
@@ -363,6 +369,7 @@ export default {
       bRecInstance.refreshRooms().then(() => {
         bRecInstance.fetchRoom(liveid).then(info => {
           let data = info.roomInfo
+
           let liveArea = $('.live-area')
           liveArea.removeClass('loading')
           liveArea.html(data.areaNameParent + ' - ' + data.areaNameChild)
@@ -518,12 +525,12 @@ export default {
           $(el).removeClass('chart-top-btn-active')
         })
         btn.addClass('chart-top-btn-active')
-        $('.live-chart').css('opacity', 0)
+        $('.fans-chart').css('opacity', 0)
         setTimeout(() => {
           $('.fans-chart').hide()
-          let fansChart = $('.live-chart')
-          fansChart.show()
-          fansChart.css('opacity', 1)
+          let liveChart = $('.live-chart')
+          liveChart.show()
+          liveChart.css('opacity', 1)
         }, 200)
       })
     }
@@ -802,6 +809,7 @@ export default {
   margin-top: 5px;
   margin-bottom: 5px;
   font-weight: bolder;
+  user-select: none;
 }
 
 .rec-btn {

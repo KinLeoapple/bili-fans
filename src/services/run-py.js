@@ -9,7 +9,7 @@ const lockFile = './venv.lock'
 
 let workerProcess = undefined
 
-export function runPython(PORT) {
+export function runPython(PORT, BindPort) {
     return new Promise(resolve => {
         let serverLock = './server.lock'
         if (!fs.existsSync(serverLock)) {
@@ -18,6 +18,8 @@ export function runPython(PORT) {
         let runLoop = setInterval(() => {
             if (!fs.existsSync(lockFile)) {
                 clearInterval(runLoop)
+
+                BindPort.close()
 
                 let environment = child_process.exec('set FLASK_APP=app.py', (error, stdout, stderr) => {
                     if (error) {

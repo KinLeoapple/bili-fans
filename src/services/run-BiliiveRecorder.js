@@ -9,7 +9,7 @@ const recorder = './BililiveRecorder/BililiveRecorder.Cli.exe'
 
 let workerProcess = undefined
 
-export function runBiliiveRecorder(REC_PORT, workspace = './Records') {
+export function runBiliiveRecorder(REC_PORT, BindPort, workspace = './Records') {
     // https://rec.danmuji.org/user/install/cli/
     // https://rec.danmuji.org/dev/sdk.js/
 
@@ -28,6 +28,8 @@ export function runBiliiveRecorder(REC_PORT, workspace = './Records') {
                 if (!fs.existsSync(workspace)) {
                     fs.mkdirSync(workspace)
                 }
+
+                BindPort.close()
 
                 workerProcess = child_process.spawn(recorder,
                     [

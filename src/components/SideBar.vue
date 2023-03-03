@@ -66,7 +66,12 @@ export default {
           this.appendToList(id)
           this.getInfo(id)
           if (clickedUID !== undefined && clickedUID.toString() === id.toString()) {
-            $(`[uid=${id}]`).addClass('up-active')
+            $(`[uid=${id}]`).click()
+          } else {
+            let chil = $('.list').children()
+            if (chil.length > 0) {
+              chil[0].click()
+            }
           }
         })
       })
@@ -77,6 +82,7 @@ export default {
       $('.refresh-list-btn-box').on('click', () => {
         if (!isDisable) {
           let btn = $('.refresh-list-btn')
+          let btnBox = $('.refresh-list-btn-box')
           btn.css('transform', 'rotate(-360deg)')
           btn.css('transition', 'all 0s linear')
           isDisable = true
@@ -91,15 +97,15 @@ export default {
             }, 250)
           })
           this.updateList(clickedUID)
-          btn.off('click')
-          $('.refresh-list-btn-box').css('cursor', 'not-allowed')
+          btnBox.off('click')
+          btnBox.css('cursor', 'not-allowed')
           setTimeout(() => {
             btn.css('transform', 'none')
             btn.css('transition', 'all .5s linear')
           }, 550)
           setTimeout(() => {
             isDisable = false
-            $('.refresh-list-btn-box').css('cursor', 'pointer')
+            btnBox.css('cursor', 'pointer')
             this.refreshList()
           }, 5000)
         }

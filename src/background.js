@@ -162,16 +162,14 @@ scanPort(8888, function (port) {
         RuntimeEnvironment().then(ENV => {
             ENV_STATUS = ENV
             console.log('Environment ' + ENV)
-            if (ENV === 'OK') {
-                bindPort.close()
-            } else if (ENV === 'BAD') {
+            if (ENV === 'BAD') {
                 process.exit()
             }
         })
 
 
         // Start Python
-        runPython(PORT).then(process => {
+        runPython(PORT, bindPort).then(process => {
             PROCESS = process
 
             // ONLY FOR TESTING
@@ -186,12 +184,20 @@ scanPort(8888, function (port) {
         scanPort(2233, function (port) {
             REC_PORT = port
 
-            runBiliiveRecorder(REC_PORT).then(process => {
-                REC_PROCESS = process
-
-                const rec_server = new RecServer(REC_PORT)
-                rec_server.start()
+            let bindRecPort = https.createServer(() => {
             })
+            bindRecPort.listen(REC_PORT)
+
+            console.log(`Port ${REC_PORT} Bound`)
+
+            setTimeout(() => {
+                runBiliiveRecorder(REC_PORT, bindRecPort).then(process => {
+                    REC_PROCESS = process
+
+                    const rec_server = new RecServer(REC_PORT)
+                    rec_server.start()
+                })
+            }, 200)
         })
     })
 })
