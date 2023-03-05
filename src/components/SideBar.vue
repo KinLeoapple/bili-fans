@@ -70,7 +70,9 @@ export default {
           } else {
             let chil = $('.list').children()
             if (chil.length > 0) {
-              chil[0].click()
+              setTimeout(() => {
+                chil[0].click()
+              }, 200)
             }
           }
         })
@@ -174,7 +176,7 @@ export default {
 
       $(`[uid=${id}]`).on('click', () => {
         let up = $(`[uid=${id}]`)
-        ipcRenderer.sendSync('switch', id, $(up)[0].querySelector('img').src)
+        ipcRenderer.sendSync('switch', id)
         up.siblings().each((index, el) => {
           $(el).removeClass('up-active')
         })

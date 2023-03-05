@@ -98,20 +98,21 @@ export default {
         ipcRenderer.on('remove-room', (event, uid) => {
           this.removeLiveRoom(uid)
         })
-
-        this.fansBtn()
-        this.liveBtn()
-        this.switchUID()
-        this.refreshWindow()
       })
+
+      this.fansBtn()
+      this.liveBtn()
+      this.switchUID()
+      this.refreshWindow()
     },
     // switch current uid
     switchUID() {
-      ipcRenderer.on('switch-signal', (event, uid, avatar) => {
+      ipcRenderer.on('switch-signal', (event, uid) => {
         // if new uid not equal to the old uid
         if (UID.toString() !== uid.toString()) {
           isDisable = true
           UID = uid
+          $('.live-cover').attr('src', `${require('@/assets/img/cover.png')}`)
           $('.live-btn').click()
           if (currentLoop !== undefined) {
             clearInterval(currentLoop)
@@ -123,17 +124,23 @@ export default {
           let liveArea = $('.live-area')
           liveArea.html('')
           liveArea.addClass('loading')
-          this.renderWindow(avatar)
+          this.renderWindow(uid)
           isDisable = false
         }
       })
     },
     // render this window
-    renderWindow(avatar) {
-      let countUp = new CountUp($('.fans-number')[0], 0)
-      if (avatar !== undefined) {
-        $('.current-avatar').attr('src', avatar)
+    renderWindow(uid) {
+      let src = $(`[uid=${uid}] .avatar`).attr('src')
+      let avatar
+      console.log(src)
+      if (src !== undefined) {
+        avatar = src
+      } else {
+        avatar = `${require('@/assets/img/avatar.png')}`
       }
+      let countUp = new CountUp($('.fans-number')[0], 0)
+      $('.current-avatar').attr('src', avatar)
       // sleep for 200ms
       sleep(200).then(() => {
         this.getAllInfo(UID).then(resolve => {
@@ -210,35 +217,30 @@ export default {
         let template = `<svg class="compare-pointer" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
                 </svg>`
-        let countable
-        for (let i = 0; i < list.length - 1; i++) {
+        let countable = 0
+        for (let i = 0; i < list.length; i++) {
           if (list[i] !== -1) {
+            let perCountable = countable
             countable = i
-            if (list[i + 1] !== -1) {
-              let compare = list[countable] - list[i + 1]
-              if (compare >= 0) {
-                chart.children()[countable].querySelector('.fans-card-compare').innerHTML = template + Math.abs(compare)
-                $(chart.children()[countable].querySelector('.fans-card-compare .compare-pointer')).css('transform', 'rotateX(180deg)')
-                $(chart.children()[countable].querySelector('.fans-card-compare')).css('color', '#6eb025')
-              } else if (compare < 0) {
-                chart.children()[countable].querySelector('.fans-card-compare').innerHTML = template + Math.abs(compare)
-                $(chart.children()[countable].querySelector('.fans-card-compare')).css('color', '#d04748')
-              }
-            } else {
-              chart.children()[i + 1].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
+            let compare = list[perCountable] - list[countable]
+            if (compare >= 0) {
+              chart.children()[perCountable].querySelector('.fans-card-compare').innerHTML = template + Math.abs(compare)
+              $(chart.children()[perCountable].querySelector('.fans-card-compare .compare-pointer')).css('transform', 'rotateX(180deg)')
+              $(chart.children()[perCountable].querySelector('.fans-card-compare')).css('color', '#6eb025')
+            } else if (compare < 0) {
+              chart.children()[perCountable].querySelector('.fans-card-compare').innerHTML = template + Math.abs(compare)
+              $(chart.children()[perCountable].querySelector('.fans-card-compare')).css('color', '#d04748')
             }
             $(chart.children()[countable].querySelector('.fans-card-compare')).removeClass('loading')
-            $(chart.children()[i + 1].querySelector('.fans-card-compare')).removeClass('loading')
+            $(chart.children()[i].querySelector('.fans-card-compare')).removeClass('loading')
           } else {
-            chart.children()[i + 1].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
+            chart.children()[i].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
           }
           $(chart.children()[countable].querySelector('.fans-card-compare')).removeClass('loading')
-          $(chart.children()[i + 1].querySelector('.fans-card-compare')).removeClass('loading')
+          $(chart.children()[i].querySelector('.fans-card-compare')).removeClass('loading')
         }
-        if (countable !== undefined && countable !== list.length - 1) {
-          chart.children()[countable].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
-          $(chart.children()[countable].querySelector('.fans-card-compare')).removeClass('loading')
-        }
+        chart.children()[list.length - 1].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
+        $(chart.children()[list.length - 1].querySelector('.fans-card-compare')).removeClass('loading')
         this.compareCurrent()
       })
     },
@@ -311,7 +313,7 @@ export default {
           btn.css('transition', 'all 0s linear')
           isDisable = true
 
-          this.renderWindow()
+          this.renderWindow(UID)
 
           btnBox.off('click')
           btnBox.css('cursor', 'not-allowed')
@@ -341,6 +343,17 @@ export default {
       if (liveid !== undefined) {
         bRecInstance.addRoom({roomId: Number(liveid), autoRecord: true}).then(() => {
           liveRooms[uid] = Number(liveid)
+          let autoRec = ipcRenderer.sendSync('get-auto-rec', Number(liveid))
+          console.log(autoRec)
+          if (autoRec === false) {
+            let dot = $('.rec-btn-dot')
+            let recBtn = $('.rec-btn')
+            recBtn.css('background-color', '#d04748')
+            dot.css('margin-left', '18px')
+            this.stopRec(liveRooms[UID])
+            $('.rec-btn-container em').html('NOT Recording')
+            this.stopRec(Number(liveid))
+          }
           this.updateLiveCover(uid).then(cover => {
             liveCover[uid] = cover
           })
@@ -430,6 +443,7 @@ export default {
     stopRec: async function (liveid) {
       bRecInstance.fetchRoom(liveid).then(room => {
         room.stop()
+        ipcRenderer.sendSync('set-auto-rec', liveid, false)
         liveStat[UID] = false
         console.log(liveStat)
       })
@@ -438,6 +452,7 @@ export default {
     startRec: async function (liveid) {
       bRecInstance.fetchRoom(liveid).then(room => {
         room.start()
+        ipcRenderer.sendSync('set-auto-rec', liveid, true)
         liveStat[UID] = true
         console.log(liveStat)
       })
@@ -497,7 +512,7 @@ export default {
         }
         return strHex;
       } else {
-        return String(color);
+        return color.toString();
       }
     },
     // fans button
@@ -757,6 +772,9 @@ export default {
   width: 90%;
   height: auto;
   border-radius: 10px;
+  object-fit: contain;
+  object-position: center;
+  transition: src .2s linear;
 }
 
 .live-title-box {

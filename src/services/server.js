@@ -36,6 +36,8 @@ export class Server {
         switchUID()
         followers()
         liveRoom()
+        setAutoRecord()
+        getAutoRecord()
     }
 
     stop() {
@@ -141,8 +143,8 @@ function removeUID() {
 
 function switchUID() {
     // send uid to main window
-    ipcMain.on('switch', (event, uid, avatar) => {
-        event.sender.send('switch-signal', uid, avatar)
+    ipcMain.on('switch', (event, uid) => {
+        event.sender.send('switch-signal', uid)
         event.returnValue = ''
     })
 }
@@ -294,5 +296,30 @@ function liveRoom() {
             })
             event.returnValue = list
         })
+    })
+}
+
+function setAutoRecord() {
+    ipcMain.on('set-auto-rec', (event, liveid, autoRec) => {
+        db.update(
+            {liveid: liveid},
+            {
+                $set: {
+                    auto: autoRec,
+                },
+            },
+            function (err) {
+                event.returnValue = err === null;
+            })
+    })
+}
+
+function getAutoRecord() {
+    ipcMain.on('get-auto-rec', (event, liveid) => {
+        db.find(
+            {liveid: liveid},
+            function (err, docs) {
+                event.returnValue = err === docs.auto;
+            })
     })
 }

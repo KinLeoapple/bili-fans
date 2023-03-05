@@ -5,12 +5,16 @@ module.exports = defineConfig({
     electronBuilder: {
       builderOptions: {
         // options placed here will be merged with default configuration and passed to electron-builder
+        "productName": "Bili-Fans",
+        "appId": "com.example.app",
+        "copyright": `Copyright ©${new Date().getFullYear()}`,
         "directories": {
           "buildResources": "build"
         },
         "extraFiles": [
           "assets",
         ],
+        "publish": ['github'],
         "win": {
           "target": [
             "msi",

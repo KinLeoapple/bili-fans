@@ -1,6 +1,7 @@
 {
   "name": "bili-fans",
   "version": "1.0.0",
+  "author": "KinLeoapple",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
