@@ -1,5 +1,6 @@
 import {ipcMain} from 'electron';
 import axios from "axios";
+import {checkUpdate} from "@/services/check-update";
 
 const NeDB = require('nedb');
 const schedule = require('node-schedule');
@@ -38,6 +39,8 @@ export class Server {
         liveRoom()
         setAutoRecord()
         getAutoRecord()
+        updateApp()
+        settingNotification()
     }
 
     stop() {
@@ -319,7 +322,32 @@ function getAutoRecord() {
         db.find(
             {liveid: liveid},
             function (err, docs) {
-                event.returnValue = err === docs.auto;
+                event.returnValue = docs.auto;
             })
+    })
+}
+
+function updateApp() {
+    ipcMain.on('update-app', (event, currentVersion) => {
+        checkUpdate().then(version => {
+            if (version !== currentVersion) {
+                event.returnValue = {
+                    res: true,
+                    version: version
+                }
+            } else {
+                event.returnValue = {
+                    res: false,
+                    version: version
+                }
+            }
+        })
+    })
+}
+
+function settingNotification() {
+    ipcMain.on('setting', event => {
+        event.sender.send('go-setting')
+        event.returnValue = ''
     })
 }

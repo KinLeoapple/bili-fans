@@ -1,0 +1,68 @@
+.menu-bar {
+    width: 100%;
+    height: 30px;
+    position: relative;
+    background: white;
+    color: #2c3e50;
+    border-bottom: #2c3e50 1px solid;
+    display: inline-flex;
+    flex-direction: row;
+    -webkit-app-region: drag;
+    -webkit-user-select: none;
+    border-radius: 10px 10px 0 0;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.menu-title {
+    height: 30px;
+    line-height: 30px;
+    margin-left: 10px;
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.menu-line, .menu-btn-line {
+    height: 20px;
+    width: 1px;
+    border-radius: 10px;
+    background: #2c3e50;
+    margin: 10px;
+}
+
+.menu-text {
+    font-weight: bolder;
+    letter-spacing: 1px;
+}
+
+.menu-btn-box {
+    min-width: 90px;
+    height: 30px;
+    /*position: absolute;*/
+    /*margin-left: calc(100% - 160px);*/
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.setting, .close-window, .min-window {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    padding: 2px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    -webkit-app-region: no-drag;
+    cursor: pointer;
+    margin: 10px;
+    transition: all .15s linear;
+}
+
+.setting:hover, .close-window:hover, .min-window:hover {
+    background: #2c3e50;
+    color: white;
+}

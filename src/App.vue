@@ -19,19 +19,27 @@ import MenuBar from "@/components/MenuBar.vue";
 </template>
 
 <script>
+import '@/assets/css/app.css';
+
 import $ from 'jquery';
 
 const ipcRenderer = window.require('electron').ipcRenderer;
 
+let isRun = false
 let loadingLoop
 
 export default {
   name: 'App',
   mounted() {
+    ipcRenderer.on('go-setting', () => {
+      if (isRun !== false) {
+        // show setting here
+      }
+    })
     this.insertWave()
     this.processing()
     let runLoop = setInterval(() => {
-      let isRun = ipcRenderer.sendSync('window-run')
+      isRun = ipcRenderer.sendSync('window-run')
       if (isRun) {
         clearInterval(runLoop)
         this.removeAllLoading()
@@ -128,92 +136,3 @@ export default {
 }
 </script>
 
-<style>
-html, body, #app {
-  width: 100%;
-  height: 100%;
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
-  justify-items: center;
-  align-content: center;
-  align-items: center;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-}
-
-#app {
-  width: 800px;
-  height: 600px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.7);
-}
-
-.frame {
-  width: 100%;
-  height: calc(100% - 61px);
-  position: relative;
-  display: inline-flex;
-  flex-direction: row;
-  justify-content: center;
-  justify-items: center;
-  align-content: center;
-  align-items: center;
-}
-
-.loading {
-  background: linear-gradient(90deg, #f2f2f2 25%, #d1d1d1 40%, #f2f2f2 50%);
-  background-size: 400% 400%;
-  border-radius: 3px;
-  animation: loading 1.8s ease infinite;
-}
-
-@keyframes loading {
-  0% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0 50%;
-  }
-}
-
-.loading-mask {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  background: white;
-  z-index: 999;
-  opacity: 1;
-  transition: all .2s linear;
-}
-
-.program-loading {
-  width: 100%;
-  height: 50px;
-  text-align: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  margin: auto;
-  font-size: 20px;
-  line-height: 50px;
-  opacity: 0;
-  transition: all .2s linear;
-}
-
-.loading-bottom {
-  width: 100%;
-  height: auto;
-  position: absolute;
-  bottom: -4px;
-  margin: auto;
-}
-</style>

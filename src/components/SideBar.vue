@@ -10,7 +10,7 @@
       </svg>
       <div class="msg"></div>
     </div>
-    <div class="line"></div>
+    <div class="side-bar-line"></div>
     <div class="title">
       😼<em class="title-text">LIST</em>
       <div class="refresh-list-btn-box">
@@ -29,10 +29,14 @@
 </template>
 
 <script>
+import '@/assets/css/side-bar.css';
+
 import axios from "axios";
 import $ from "jquery";
 import {sleep} from "@/assets/js/sleep";
 import {Sort} from "@/assets/js/quicksort";
+import {convertImgToBase64} from "@/assets/js/conver-img";
+import {Tooltip} from "@/assets/js/tooltip";
 
 const ipcRenderer = window.require('electron').ipcRenderer;
 
@@ -70,9 +74,7 @@ export default {
           } else {
             let chil = $('.list').children()
             if (chil.length > 0) {
-              setTimeout(() => {
-                chil[0].click()
-              }, 200)
+              chil[0].click()
             }
           }
         })
@@ -130,7 +132,7 @@ export default {
       let html =
           `<li class="up" uid="${id}">
                 <img class="avatar" src="${require('@/assets/img/avatar.png')}" alt="" crossOrigin="anonymous"/>
-                <span class="name" title=""></span>
+                <span class="name"></span>
                 <svg xmlns="http://www.w3.org/2000/svg" class="delete-up" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                 </svg>
@@ -164,10 +166,12 @@ export default {
             let data = resolve.data
 
             let avatar = `https://wsrv.nl/?url=${data.face}&w=300&h=300&fit=cover&mask=circle`
-            $(`[uid=${id}] .avatar`).attr('src', avatar)
+            convertImgToBase64(avatar, function (base64) {
+              $(`[uid=${id}] .avatar`).attr('src', base64)
+            })
             let el = $(`[uid=${id}] .name`)
             let name = data.name
-            el.attr('title', name)
+            Tooltip($(`[uid=${id}]`)[0], name)
             el.html(name)
           })
           .catch(err => {
@@ -233,236 +237,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.side-bar {
-  height: 100%;
-  width: 200px;
-  display: inline-flex;
-  flex-direction: column;
-  background: white;
-  /*justify-content: center;*/
-  align-items: center;
-  border-right: 1px #2c3e50 solid;
-}
-
-.title {
-  width: 100%;
-  height: 30px;
-  position: relative;
-  text-align: left;
-  text-indent: 10px;
-  display: inline-flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 10px;
-  margin: 5px;
-  font-size: 20px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  -webkit-user-select: none;
-}
-
-.title .title-text {
-  height: 30px;
-  line-height: 30px;
-  text-align: left;
-  text-indent: -5px;
-  font-size: 14px;
-  border-top: #2c3e50 1px dashed;
-  border-bottom: #2c3e50 1px dashed;
-}
-
-.append-box {
-  height: 50px;
-  width: 100%;
-  position: relative;
-  display: inline-flex;
-  flex-direction: row;
-  background: white;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-.append-input {
-  height: 30px;
-  width: 110px;
-  border: #2c3e50 1px solid;
-  border-radius: 30px;
-  margin: 5px;
-  padding-left: 10px;
-  padding-right: 10px;
-  outline: none;
-  transition: all .2s linear;
-}
-
-.append-input::placeholder {
-  text-align: center;
-}
-
-.append-input:focus {
-  box-shadow: #2c3e50 0 0 5px 2px;
-}
-
-.append-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: #2c3e50 1px solid;
-  cursor: pointer;
-  margin: 10px;
-  transition: all .2s linear;
-}
-
-.append-btn:hover {
-  color: white;
-  background: #2c3e50;
-}
-
-.msg {
-  width: 185px;
-  height: 40px;
-  line-height: 40px;
-  text-align: center;
-  position: absolute;
-  border-radius: 10px;
-  background: #2c3e50;
-  margin-left: 500px;
-  color: white;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  transition: all .2s linear;
-}
-
-.line {
-  height: 1px;
-  width: 80%;
-  border-radius: 10px;
-  background: #2c3e50;
-  margin-top: 10px;
-  margin-bottom: 20px;
-}
-
-.refresh-list-btn-box {
-  width: 20px;
-  height: 20px;
-  padding: 5px;
-  cursor: pointer;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  margin-left: calc(100% - 45px);
-  border-radius: 8px;
-  border: #2c3e50 1px solid;
-  transition: all .2s linear;
-}
-
-.refresh-list-btn-box:hover {
-  color: white;
-  background: #2c3e50;
-}
-
-.refresh-list-btn {
-  width: 20px;
-  height: 20px;
-  transition: all .2s linear;
-}
-
-.list-scroll {
-  min-height: calc(100% - 80px - 50px - 10px - 10px - 20px - 1px);
-  height: calc(100% - 80px - 50px - 10px - 10px - 20px - 1px);
-  max-height: calc(100% - 80px - 50px - 10px - 10px - 20px - 1px);
-  width: 100%;
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-
-.list {
-  min-height: 200px;
-  height: auto;
-  width: 100%;
-  position: relative;
-  list-style-type: none;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  margin-top: 10px;
-  padding: 0;
-  gap: 5px;
-}
-</style>
-
-<style>
-.up {
-  height: 50px;
-  width: 90%;
-  border-radius: 50px;
-  position: relative;
-  list-style: none;
-  border: #2c3e50 1px solid;
-  display: inline-flex;
-  justify-content: space-evenly;
-  align-items: center;
-  cursor: pointer;
-  transition: all .2s linear;
-  animation-name: fadeIn;
-  animation-duration: .5s;
-  animation-timing-function: linear;
-  animation-delay: 0s;
-  animation-iteration-count: 1;
-  animation-direction: normal;
-  overflow: hidden;
-}
-
-.up:hover, .up-active {
-  color: white;
-  background: #2c3e50;
-}
-
-@keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 100%;
-  }
-}
-
-.delete-up {
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  opacity: 0;
-  z-index: -999;
-  transition: opacity .2s linear, z-index .2s, background .1s linear;
-}
-
-.up:hover .delete-up {
-  opacity: 100%;
-  z-index: 0;
-}
-
-.delete-up:hover {
-  background: #fa4a4a;
-}
-
-.avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-}
-
-.name {
-  min-width: 80px;
-  max-width: 80px;
-  height: 20px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-</style>
