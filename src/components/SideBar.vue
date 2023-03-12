@@ -74,7 +74,9 @@ export default {
           } else {
             let chil = $('.list').children()
             if (chil.length > 0) {
-              chil[0].click()
+              setTimeout(() => {
+                chil[0].click()
+              }, 250)
             }
           }
         })
@@ -178,26 +180,28 @@ export default {
             console.log(err)
           })
 
-      $(`[uid=${id}]`).on('click', () => {
-        let up = $(`[uid=${id}]`)
-        ipcRenderer.sendSync('switch', id)
-        up.siblings().each((index, el) => {
-          $(el).removeClass('up-active')
+      setTimeout(() => {
+        $(`[uid=${id}]`).on('click', () => {
+          let up = $(`[uid=${id}]`)
+          ipcRenderer.sendSync('switch', id)
+          up.siblings().each((index, el) => {
+            $(el).removeClass('up-active')
+          })
+          up.addClass('up-active')
         })
-        up.addClass('up-active')
-      })
 
-      $(`[uid=${id}] .delete-up`).on('click', event => {
-        event.stopPropagation()
-        let isDelete = ipcRenderer.sendSync('delete', id)
-        if (isDelete) {
-          let el = $(`[uid=${id}]`)
-          el.css('opacity', 0)
-          setTimeout(() => {
-            el.remove()
-          }, 250)
-        }
-      })
+        $(`[uid=${id}] .delete-up`).on('click', event => {
+          event.stopPropagation()
+          let isDelete = ipcRenderer.sendSync('delete', id)
+          if (isDelete) {
+            let el = $(`[uid=${id}]`)
+            el.css('opacity', 0)
+            setTimeout(() => {
+              el.remove()
+            }, 250)
+          }
+        })
+      }, 200)
     },
     // append uid function
     appendUID() {

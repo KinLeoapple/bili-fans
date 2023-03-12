@@ -3,6 +3,7 @@ import SideBar from "@/components/SideBar.vue";
 import MainWindow from "@/components/MainWindow.vue";
 import StatusBar from "@/components/StatusBar.vue";
 import MenuBar from "@/components/MenuBar.vue";
+import SettingWindow from "@/components/SettingWindow.vue";
 </script>
 
 <template>
@@ -14,6 +15,7 @@ import MenuBar from "@/components/MenuBar.vue";
     </div>
     <side-bar ref="side-bar"/>
     <main-window ref="main-window"/>
+    <setting-window ref="setting-window"/>
   </div>
   <status-bar/>
 </template>
@@ -31,13 +33,13 @@ let loadingLoop
 export default {
   name: 'App',
   mounted() {
+    this.insertWave()
+    this.processing()
     ipcRenderer.on('go-setting', () => {
       if (isRun !== false) {
         // show setting here
       }
     })
-    this.insertWave()
-    this.processing()
     let runLoop = setInterval(() => {
       isRun = ipcRenderer.sendSync('window-run')
       if (isRun) {
@@ -46,6 +48,8 @@ export default {
 
         this.$refs["side-bar"].run()
         this.$refs["main-window"].run()
+        this.$refs["main-window"].hide()
+        this.$refs["setting-window"].show()
       }
     }, 200)
   },

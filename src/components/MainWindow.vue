@@ -61,8 +61,8 @@ import axios from "axios";
 import {sleep} from "@/assets/js/sleep";
 import {CountUp} from "countup.js";
 import $ from 'jquery';
-import {BililiveRec} from "@bililive/rec-sdk";
 import {convertImgToBase64} from "@/assets/js/conver-img";
+import {BililiveRec} from "@bililive/rec-sdk";
 
 const ipcRenderer = window.require('electron').ipcRenderer;
 
@@ -70,8 +70,7 @@ let PORT
 let isDisable = true
 let UID = ''
 let current = 0
-let REC_PORT
-let bRecInstance
+let BililiveRecorder
 let liveRooms = {}
 let liveCover = {}
 let liveStat = {}
@@ -81,6 +80,12 @@ let liveLoop
 export default {
   name: "MainWindow",
   methods: {
+    hide() {
+      $('.main-window').hide()
+    },
+    show() {
+      $('.main-window').show()
+    },
     run() {
       this.$nextTick(() => {
         PORT = ipcRenderer.sendSync('port')
@@ -240,16 +245,15 @@ export default {
               chart.children()[perCountable].querySelector('.fans-card-compare').innerHTML = template + Math.abs(compare)
               $(chart.children()[perCountable].querySelector('.fans-card-compare')).css('color', '#d04748')
             }
-            $(chart.children()[countable].querySelector('.fans-card-compare')).removeClass('loading')
-            $(chart.children()[i].querySelector('.fans-card-compare')).removeClass('loading')
           } else {
             chart.children()[i].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
           }
-          $(chart.children()[countable].querySelector('.fans-card-compare')).removeClass('loading')
           $(chart.children()[i].querySelector('.fans-card-compare')).removeClass('loading')
         }
+        if (countable !== list.length - 1) {
+          chart.children()[countable].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
+        }
         chart.children()[list.length - 1].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
-        $(chart.children()[list.length - 1].querySelector('.fans-card-compare')).removeClass('loading')
         this.compareCurrent()
       })
     },
@@ -336,13 +340,13 @@ export default {
         }
       })
     },
-    // run recorder instance
-    runBililiveRecorder() {
-      REC_PORT = ipcRenderer.sendSync('rec-port')
-      bRecInstance = new BililiveRec({httpUrl: `http://localhost:${REC_PORT}`})
-      bRecInstance.getConfig().then(config => {
+    // run recorder
+    runBililiveRecorder: function () {
+      let rec_port = ipcRenderer.sendSync('rec-port')
+      BililiveRecorder = new BililiveRec({httpUrl: `http://localhost:${rec_port}`})
+      BililiveRecorder.getConfig().then(config => {
         config.optionalSaveStreamCover = {hasValue: true, Value: true}
-        bRecInstance.setConfig(config)
+        BililiveRecorder.setConfig(config)
       })
     },
     // append live room
@@ -352,7 +356,7 @@ export default {
         autoRec = autoRec !== false;
         liveStat[uid] = autoRec
 
-        bRecInstance.addRoom({roomId: Number(liveid), autoRecord: autoRec}).then(() => {
+        BililiveRecorder.addRoom({roomId: Number(liveid), autoRecord: autoRec}).then(() => {
           liveRooms[uid] = Number(liveid)
           console.log(autoRec)
           this.updateLiveCover(uid).then(cover => {
@@ -367,7 +371,7 @@ export default {
     removeLiveRoom: function (uid) {
       if (liveRooms[uid] !== undefined) {
         let liveid = liveRooms[uid]
-        bRecInstance.fetchRoom(liveid).then(room => {
+        BililiveRecorder.fetchRoom(liveid).then(room => {
           room.stop().then(() => {
             room.remove().then(() => {
               delete liveRooms[uid]
@@ -380,31 +384,33 @@ export default {
     },
     // refresh room info (better refresh in 6s, which is 6000ms)
     refreshRoomInfo(liveid) {
-      bRecInstance.refreshRooms().then(() => {
-        bRecInstance.fetchRoom(liveid).then(info => {
-          let data = info.roomInfo
+      if (liveid !== undefined) {
+        BililiveRecorder.refreshRooms().then(() => {
+          BililiveRecorder.fetchRoom(liveid).then(info => {
+            let data = info.roomInfo
 
-          let cover = $('.live-cover')
-          if (cover.attr('src') !== liveCover[UID]) {
-            cover.attr('src', liveCover[UID])
-            this.updateLiveCover(UID).then(img => {
-              liveCover[UID] = img
-            })
-          }
+            let cover = $('.live-cover')
+            if (cover.attr('src') !== liveCover[UID]) {
+              cover.attr('src', liveCover[UID])
+              this.updateLiveCover(UID).then(img => {
+                liveCover[UID] = img
+              })
+            }
 
-          let liveArea = $('.live-area')
-          liveArea.removeClass('loading')
-          liveArea.html(data.areaNameParent + ' - ' + data.areaNameChild)
-          let liveTitle = $('.live-title')
-          liveTitle.removeClass('loading')
-          liveTitle.html(data.title)
-          if (data.streaming) {
-            $('.live-is-stream').css('background', '#6eb025')
-          } else {
-            $('.live-is-stream').css('background', '#d04748')
-          }
+            let liveArea = $('.live-area')
+            liveArea.removeClass('loading')
+            liveArea.html(data.areaNameParent + ' - ' + data.areaNameChild)
+            let liveTitle = $('.live-title')
+            liveTitle.removeClass('loading')
+            liveTitle.html(data.title)
+            if (data.streaming) {
+              $('.live-is-stream').css('background', '#6eb025')
+            } else {
+              $('.live-is-stream').css('background', '#d04748')
+            }
+          })
         })
-      })
+      }
     },
     // record live switcher
     recordLiveSwitch() {
@@ -450,18 +456,18 @@ export default {
     },
     // stop current room recording
     stopRec: async function (liveid) {
-      bRecInstance.fetchRoom(liveid).then(room => {
+      BililiveRecorder.fetchRoom(Number(liveid)).then(room => {
         room.stop()
-        ipcRenderer.sendSync('set-auto-rec', liveid, false)
+        ipcRenderer.sendSync('set-auto-rec', Number(liveid), false)
         liveStat[UID] = false
         console.log(liveStat)
       })
     },
     // start current room recoding
     startRec: async function (liveid) {
-      bRecInstance.fetchRoom(liveid).then(room => {
+      BililiveRecorder.fetchRoom(Number(liveid)).then(room => {
         room.start()
-        ipcRenderer.sendSync('set-auto-rec', liveid, true)
+        ipcRenderer.sendSync('set-auto-rec', Number(liveid), true)
         liveStat[UID] = true
         console.log(liveStat)
       })

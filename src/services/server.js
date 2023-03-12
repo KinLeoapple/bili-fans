@@ -1,16 +1,16 @@
-import {ipcMain} from 'electron';
+import {ipcMain, dialog} from 'electron';
 import axios from "axios";
 import {checkUpdate} from "@/services/check-update";
 
-const NeDB = require('nedb');
+const path = require("path")
 const schedule = require('node-schedule');
-
-let PORT
-// load database
-let db = new NeDB({
+const NeDB = require('nedb')
+const db = new NeDB({
     filename: './data.db',
     autoload: true,
 })
+
+let PORT
 let job
 
 export class Server {
@@ -41,6 +41,7 @@ export class Server {
         getAutoRecord()
         updateApp()
         settingNotification()
+        openDialog()
     }
 
     stop() {
@@ -349,5 +350,16 @@ function settingNotification() {
     ipcMain.on('setting', event => {
         event.sender.send('go-setting')
         event.returnValue = ''
+    })
+}
+
+function openDialog() {
+    ipcMain.on('open-dialog', (event, options) => {
+        dialog.showOpenDialog({
+            properties: [options, 'browserWindow', 'createDirectory', 'promptToCreate'],
+            defaultPath: path.resolve("__dirname", '/')
+        }).then(file => {
+            event.returnValue = file
+        })
     })
 }

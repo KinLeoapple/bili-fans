@@ -30,8 +30,3 @@
 .new-version {
     border-radius: 0 0 10px 0;
 }
-
-.new-version:hover {
-    background: #17222a;
-    cursor: pointer;
-}

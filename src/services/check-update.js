@@ -1,6 +1,6 @@
 import download from "download";
 
-export function checkUpdate() {
+export async function checkUpdate() {
     return new Promise(resolve => {
         (async () => {
             let bytes = await download('https://raw.githubusercontent.com/KinLeoapple/bili-fans/master/package.json')
