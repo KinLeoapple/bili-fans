@@ -1,17 +1,16 @@
 import {ipcMain, dialog} from 'electron';
 import axios from "axios";
 import {checkUpdate} from "@/services/check-update";
+import fs from "fs";
 
 const path = require("path")
 const schedule = require('node-schedule');
 const NeDB = require('nedb')
-const db = new NeDB({
-    filename: './data.db',
-    autoload: true,
-})
 
 let PORT
 let job
+
+let db
 
 export class Server {
 
@@ -29,7 +28,49 @@ export class Server {
         console.log('Schedule Job now is running')
     }
 
+    // make sure the size of data file always be smallest
+    creatDataBase() {
+        fs.readFile('./data.db', (err, buffer) => {
+            let data = buffer.toString()
+            let lines = data.split('\n')
+            let arr = [...new Set(lines)]
+            fs.writeFile('./data.db', '', () => {
+
+                let str = ''
+                let dataJson = {}
+                arr.forEach(item => {
+                    if (item !== '\n' && item !== '') {
+                        let json = JSON.parse(item)
+                        dataJson[json._id] = json
+                    }
+                })
+
+                for (let i in dataJson) {
+                    str += JSON.stringify(dataJson[i]) + '\n'
+                }
+
+                fs.writeFile('./data.db', str, () => {
+                    db = new NeDB({
+                        filename: './data.db',
+                        autoload: true,
+                    })
+
+                    db.find({}, function (err, docs) {
+                        const FIVE_DAYS = [initDateTime(4), initDateTime(3), initDateTime(2), initDateTime(1), initDateTime(0)]
+                        docs.forEach(doc => {
+                            let fans = doc.fans
+
+                            cleanDate(FIVE_DAYS, doc, fans)
+                        })
+                    })
+                })
+            })
+        })
+    }
+
     start() {
+        this.creatDataBase()
+
         port()
         upList()
         appendUID()
@@ -41,13 +82,18 @@ export class Server {
         getAutoRecord()
         updateApp()
         settingNotification()
+        updateNotification()
+        returnUpdateResult()
         openDialog()
+        setRecordPath()
+        getRecordPath()
     }
 
     stop() {
         if (job !== undefined) {
             job.cancel()
         }
+        this.creatDataBase()
     }
 }
 
@@ -238,28 +284,36 @@ function updateFollowerJob() {
                 fans[CURRENT_DATE] = data.follower
 
                 if (data.follower !== undefined) {
-                    for (let key in fans) {
-                        if (FIVE_DAYS.indexOf(key.toString()) === -1) {
-                            delete fans[key]
-                        }
-                    }
-
-                    db.update(
-                        {uid: doc.uid},
-                        {
-                            $set: {
-                                fans: fans,
-                            },
-                        },
-                        function (err) {
-                            if (err !== null) {
-                                console.log(err)
-                            }
-                        })
+                    cleanDate(FIVE_DAYS, doc, fans)
                 }
             })
         })
     })
+}
+
+function cleanDate(FIVE_DAYS, doc, fans) {
+    let isChange = false
+    for (let key in fans) {
+        if (FIVE_DAYS.indexOf(key.toString()) === -1) {
+            delete fans[key]
+            isChange = true
+        }
+    }
+
+    if (isChange) {
+        db.update(
+            {uid: doc.uid},
+            {
+                $set: {
+                    fans: fans,
+                },
+            },
+            function (err) {
+                if (err !== null) {
+                    console.log(err)
+                }
+            })
+    }
 }
 
 function initDateTime(day) {
@@ -323,7 +377,7 @@ function getAutoRecord() {
         db.find(
             {liveid: liveid},
             function (err, docs) {
-                event.returnValue = docs.auto;
+                event.returnValue = docs[0].auto;
             })
     })
 }
@@ -347,9 +401,21 @@ function updateApp() {
 }
 
 function settingNotification() {
-    ipcMain.on('setting', event => {
-        event.sender.send('go-setting')
+    ipcMain.on('setting', (event, isShow) => {
+        event.sender.send('go-setting', isShow)
         event.returnValue = ''
+    })
+}
+
+function updateNotification() {
+    ipcMain.on('check-update', (event) => {
+        event.sender.send('go-update')
+    })
+}
+
+function returnUpdateResult() {
+    ipcMain.on('update-result', (event, updateResult) => {
+        event.sender.send('go-update-result', updateResult)
     })
 }
 
@@ -357,9 +423,32 @@ function openDialog() {
     ipcMain.on('open-dialog', (event, options) => {
         dialog.showOpenDialog({
             properties: [options, 'browserWindow', 'createDirectory', 'promptToCreate'],
-            defaultPath: path.resolve("__dirname", '/')
+            defaultPath: path.join(__dirname, '/')
         }).then(file => {
             event.returnValue = file
+        })
+    })
+}
+
+function setRecordPath() {
+    ipcMain.on('set-rec-path', (event, path) => {
+        fs.readFile('./config.json', (err, data) => {
+            let str = data.toString()
+            let json = JSON.parse(str)
+            json.workspace = path
+            fs.writeFile('./config.json', JSON.stringify(json), err => {
+                event.returnValue = err
+            })
+        })
+    })
+}
+
+function getRecordPath() {
+    ipcMain.on('get-rec-path', (event) => {
+        fs.readFile('./config.json', (err, data) => {
+            let str = data.toString()
+            let json = JSON.parse(str)
+            event.returnValue = json.workspace
         })
     })
 }

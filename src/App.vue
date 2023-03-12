@@ -35,9 +35,17 @@ export default {
   mounted() {
     this.insertWave()
     this.processing()
-    ipcRenderer.on('go-setting', () => {
+    ipcRenderer.on('go-setting', (event, isShow) => {
       if (isRun !== false) {
         // show setting here
+        if (isShow) {
+          this.$refs["main-window"].hide()
+          this.$refs["setting-window"].show()
+        } else {
+          this.$refs["main-window"].show()
+          this.$refs["setting-window"].hide()
+        }
+        console.log(isShow)
       }
     })
     let runLoop = setInterval(() => {
@@ -46,10 +54,9 @@ export default {
         clearInterval(runLoop)
         this.removeAllLoading()
 
+        this.$refs["setting-window"].hide()
         this.$refs["side-bar"].run()
         this.$refs["main-window"].run()
-        this.$refs["main-window"].hide()
-        this.$refs["setting-window"].show()
       }
     }, 200)
   },

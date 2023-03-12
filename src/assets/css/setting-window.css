@@ -4,8 +4,9 @@
     display: inline-flex;
     background: white;
     flex-direction: column;
-    align-items: center;
+    /*align-items: center;*/
     justify-content: flex-start;
+    position: relative;
 }
 
 .setting-title {
@@ -18,6 +19,10 @@
     font-weight: bold;
     text-align: left;
     user-select: none;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .setting-title-line {
@@ -86,11 +91,83 @@
 }
 
 .current-version {
-    width: 10%;
+    width: auto;
     height: 30px;
     line-height: 30px;
     font-weight: bold;
     border-radius: 8px;
+    padding-left: 5px;
+    padding-right: 5px;
     border: #2c3e50 solid 1px;
     user-select: none;
+}
+
+.new-version-message {
+    background: white;
+    color: #2c3e50;
+    font-weight: bold;
+    cursor: default;
+    border: #2c3e50 solid 1px;
+}
+
+.download-btn {
+    background: #2c3e50;
+    color: white;
+    border: none;
+    font-weight: normal;
+}
+
+.github-btn {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    position: relative;
+}
+
+.github-text {
+    width: 0;
+    height: 30px;
+    text-align: left;
+    text-indent: 10px;
+    font-weight: bold;
+    line-height: 30px;
+    position: absolute;
+    margin-top: -30px;
+    margin-left: 30px;
+    user-select: none;
+    cursor: default;
+    transition: width .3s linear;
+    overflow: hidden;
+}
+
+.github-btn:hover .github-text {
+    width: 180px;
+    border-right: #2c3e50 3px solid;
+}
+
+.btn-hover {
+    transition: all .2s linear;
+}
+
+.btn-hover:hover {
+    filter: drop-shadow(0 0 5px #2c3e50);
+}
+
+.close-setting {
+    width: 120px;
+    height: 35px;
+    line-height: 35px;
+    cursor: pointer;
+    border-radius: 60px;
+    background: #2c3e50;
+    color: white;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    margin: auto;
 }

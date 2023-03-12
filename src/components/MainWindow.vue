@@ -252,8 +252,10 @@ export default {
         }
         if (countable !== list.length - 1) {
           chart.children()[countable].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
+          $(chart.children()[countable].querySelector('.fans-card-compare')).css('color', '#2c3e50')
         }
         chart.children()[list.length - 1].querySelector('.fans-card-compare').innerHTML = 'NO DATA'
+        $(chart.children()[list.length - 1].querySelector('.fans-card-compare')).css('color', '#2c3e50')
         this.compareCurrent()
       })
     },
@@ -352,13 +354,12 @@ export default {
     // append live room
     appendLiveRoom: function (uid, liveid) {
       if (liveid !== undefined) {
-        let autoRec = ipcRenderer.sendSync('get-auto-rec', Number(liveid))
+        let autoRec = ipcRenderer.sendSync('get-auto-rec', liveid)
         autoRec = autoRec !== false;
         liveStat[uid] = autoRec
 
         BililiveRecorder.addRoom({roomId: Number(liveid), autoRecord: autoRec}).then(() => {
           liveRooms[uid] = Number(liveid)
-          console.log(autoRec)
           this.updateLiveCover(uid).then(cover => {
             liveCover[uid] = cover
           })
